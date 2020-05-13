@@ -67,7 +67,7 @@ def getinfo(user):
             break
     return L
 def check_cd():#check cooldown
-    t = Timer(15, check_online)
+    t = Timer(1800, check_online)
     t.start()
 
 def check_online():
@@ -85,22 +85,41 @@ def check_online():
                         or (user.voice != None and user.voice.afk == False)\
                 )\
               ):
-                print(user.display_name,'wow') #wow
+                print(user.display_name,'在線上') #wow
                 Utc = text[1]
                 h = time.gmtime().tm_hour + eval(Utc)
                 if(h > 24):
                     h = h - 24
                 elif(h < 0):
                     h = h + 24
-                if(h>=0 and h<24): #哪個時間內可以增加stack
+                if(h>=0 and h<7): #哪個時間內可以增加stack
+                    if(text[3] == '0'):
+                        save_time(user.id, 'on')
+                    print(user.display_name,'wow') #wow
                     only_change(File, i, 'stack', str(int(text[3])+1))
                     exp_add(user.id)
                 break
+    #stack_clear()
 #還不會動    
-def save_time():
+def save_time(id, mode):#'on' > 存上線 ; 'off' > 存下線
+    user = bot.get_user(id)
+    if(mode == 'on'):
+        if(user.voice != None):
+            status = str(user.voice)
+        else:
+            status = 'online'
+    else:
+        status = 'offline'
+    File = 'info.txt'
+    content = read(File)
+    for i in content:
+        if(str(id) in i):
+            x = i.split('\t')
+            Utc = x[1]
+            break
     UTC_time = str([time.gmtime().tm_year, time.gmtime().tm_mon, time.gmtime().tm_mday, time.gmtime().tm_hour, time.gmtime().tm_min])
-    text = UTC_time + Utc + ':00' + '\t' + '\n'
-    path = './history/' + data[0] + '.txt'
+    text = UTC_time + Utc + ':00' + '\t' + status + '\t' + '\n'
+    path = './history/' + str(id) + '.txt'
     with open(path, 'a') as f:
         f.seek(0,2)
         f.writelines(text)
@@ -129,7 +148,18 @@ def exp_add(id): #給我欲升經驗值的id
                 expVal = eval(x[0])
                 break
     only_change('info.txt', text, 'exp', str(exp + expVal))
-
+'''
+def stack_clear():
+    File = 'info.txt'
+    content = read(File)
+    for i in content:
+        x = i.split('\n')
+        if(x[3] != 0):
+            id = x[0]
+'''
+async def send(channel, msg):
+    channel = bot.get_channel(channel)
+    await channel.send(msg)
 
 @bot.event
 async def on_ready():
@@ -138,10 +168,8 @@ async def on_ready():
     sec = 1800 - UTC_time[1]*60 - UTC_time[2]
     if(sec < 0):
         sec = 3600 - UTC_time[1]*60 - UTC_time[2]
-    sec = 3
-    t = Timer(sec, check_cd)
+    t = Timer(sec, check_online)
     t.start()
-    check_cd()
 @bot.command()
 async def timezone(ctx):
     user = ctx.author
@@ -159,7 +187,7 @@ async def timezone(ctx):
 
 @bot.command()
 async def info(ctx, *args):
-    await ctx.send('{} arguments: {}'.format(len(args), ', '.join(args)))
+    #await ctx.send('{} arguments: {}'.format(len(args), ', '.join(args)))
     try:
         Users = ctx.message.guild.members
     except:
@@ -199,24 +227,5 @@ async def history(ctx):
 @bot.command()
 async def rank(ctx):
     pass
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 bot.run(TOKEN)
