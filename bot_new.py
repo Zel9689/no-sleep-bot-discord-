@@ -270,7 +270,10 @@ async def history(ctx, *args):
                     msg = f'{user.mention}還沒有成為變強的一員\n\
 輸入 ns timezone 設定你的時區 不睡覺才會變強'
                 else:
-                    msg = f'{user.mention}的上線歷史紀錄：\n{L.split('\t')}'
+                    data = ''
+                    for i in L:
+                        data = data + i.replace("\\","    ")
+                    msg = f'{user.mention}的上線歷史紀錄：\n{data}'
             else:
                 msg = '找不到該位使用者'
         await ctx.channel.send(msg)
