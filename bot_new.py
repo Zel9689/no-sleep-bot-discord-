@@ -91,11 +91,11 @@ def check_online():
                 print(user.display_name,'在線上') #wow
                 Utc = text[1]
                 h = time.gmtime().tm_hour + eval(Utc)
-                if(h > 24):
+                if(h >= 24):
                     h = h - 24
                 elif(h < 0):
                     h = h + 24
-                if(h>=0 and h<7): #哪個時間內可以增加stack
+                if((h>=0 and h<7) or text[3] != '0'): #哪個時間內可以增加stack
                     if(text[3] == '0'):
                         save_time(user.id, 'on')
                     print(user.display_name,'wow') #wow
@@ -119,7 +119,7 @@ def save_time(id, mode):#'on' > 存上線 ; 'off' > 存下線
             x = i.split('\t')
             Utc = x[1]
             break
-    text = UTC_time + Utc + ':00' + '\t' + status + '\t' + '\n'
+    text = str(UTC_time) + Utc + ':00' + '\t' + status + '\t' + '\n'
     path = './history/' + str(id) + '.txt'
     with open(path, 'a') as f:
         f.seek(0,2)
