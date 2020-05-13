@@ -8,6 +8,7 @@ from discord.ext import commands
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 bot = commands.Bot(command_prefix='ns ')
+clear_L = []
 
 #obj: id utc exp stack 只換指定obj的值
 def only_change(File, text, obj, value): #File:str text:str obj:str value:str
@@ -76,6 +77,7 @@ def check_online():
     content = read(File)
     for i in content:
         text = i.split('\t')
+        status = 'off'
         for j in bot.guilds:
             user = discord.utils.find(lambda g: g.id==eval(text[0]), j.members)
             #進來代表至少找到一個他在線上的證據
@@ -85,31 +87,31 @@ def check_online():
                         or (user.voice != None and user.voice.afk == False)\
                 )\
               ):
+                status = 'on'
                 print(user.display_name,'在線上') #wow
                 Utc = text[1]
                 h = time.gmtime().tm_hour + eval(Utc)
-                if(h > 24):
+                if(h >= 24):
                     h = h - 24
                 elif(h < 0):
                     h = h + 24
-                if(h>=0 and h<7): #哪個時間內可以增加stack
+                if((h>=0 and h<7) or text[3] != '0'): #哪個時間內可以增加stack
                     if(text[3] == '0'):
                         save_time(user.id, 'on')
                     print(user.display_name,'wow') #wow
                     only_change(File, i, 'stack', str(int(text[3])+1))
                     exp_add(user.id)
                 break
-    #stack_clear()
+        if(user != None):
+            stack_clear(user, status)
 #還不會動    
 def save_time(id, mode):#'on' > 存上線 ; 'off' > 存下線
-    user = bot.get_user(id)
+    UTC_time = [time.gmtime().tm_year, time.gmtime().tm_mon, time.gmtime().tm_mday, time.gmtime().tm_hour, time.gmtime().tm_min]
     if(mode == 'on'):
-        if(user.voice != None):
-            status = str(user.voice)
-        else:
-            status = 'online'
+        status = 'online'
     else:
         status = 'offline'
+        UTC_time[3] = UTC_time[3] - 2
     File = 'info.txt'
     content = read(File)
     for i in content:
@@ -117,8 +119,7 @@ def save_time(id, mode):#'on' > 存上線 ; 'off' > 存下線
             x = i.split('\t')
             Utc = x[1]
             break
-    UTC_time = str([time.gmtime().tm_year, time.gmtime().tm_mon, time.gmtime().tm_mday, time.gmtime().tm_hour, time.gmtime().tm_min])
-    text = UTC_time + Utc + ':00' + '\t' + status + '\t' + '\n'
+    text = str(UTC_time) + Utc + ':00' + '\t' + status + '\t' + '\n'
     path = './history/' + str(id) + '.txt'
     with open(path, 'a') as f:
         f.seek(0,2)
@@ -148,15 +149,26 @@ def exp_add(id): #給我欲升經驗值的id
                 expVal = eval(x[0])
                 break
     only_change('info.txt', text, 'exp', str(exp + expVal))
-'''
-def stack_clear():
-    File = 'info.txt'
-    content = read(File)
-    for i in content:
-        x = i.split('\n')
-        if(x[3] != 0):
-            id = x[0]
-'''
+
+def stack_clear(user, status):
+    global clear_L
+    if(status == 'off'):
+        File = 'info.txt'
+        content = read(File)
+        id = str(user.id)
+        for i in content:
+            if(id in i):
+                text = i
+                x = i.split('\t')
+                stack = x[3]
+        if(stack != '0'):
+            clear_L.append(id)
+        if(clear_L.count(id) > 3):
+            only_change(File, text, 'stack', '0')
+            save_time(user.id, 'off')
+        
+            
+
 async def send(channel, msg):
     channel = bot.get_channel(channel)
     await channel.send(msg)
@@ -219,6 +231,9 @@ EXP: {L[2]}\n\
             else:
                 msg = '找不到該位使用者'
         await ctx.channel.send(msg)
+        if(L[2] == '0'):
+            await message.channel.send(f'嫩 不睡覺才會變強')
+        L.clear()
 
 @bot.command()
 async def history(ctx):
