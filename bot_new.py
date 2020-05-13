@@ -166,8 +166,14 @@ def stack_clear(user, status):
         if(clear_L.count(id) > 3):
             only_change(File, text, 'stack', '0')
             save_time(user.id, 'off')
-        
-            
+
+def getdetail(user):
+    File = './history/' + str(user.id) + '.txt'
+    try:
+        content = read(File)
+    except:
+        content = -1
+    return content
 
 async def send(channel, msg):
     channel = bot.get_channel(channel)
@@ -187,7 +193,8 @@ async def timezone(ctx):
     user = ctx.author
     await user.create_dm()
     await user.dm_channel.send(
-        f'哈囉 {user.name}, 設定你的時區, 輸入：UTC(+or-)數字; e.g. UTC+8\n'
+        f'哈囉 {user.name}, 不睡覺才會變強！加入變強的行列請設定你的時區！\n'
+        f'設定你的時區, 輸入：UTC(+or-)數字; e.g. UTC+8\n'
         f'看看你在哪裡 https://upload.wikimedia.org/wikipedia/commons/8/88/World_Time_Zones_Map.png'
     )
     def check(m):
@@ -222,7 +229,8 @@ async def info(ctx, *args):
             if(user != 0):
                 L = getinfo(user)
                 if(L == -1):
-                    msg = f'{user.mention}還沒有想要變強'
+                    msg = f'{user.mention}還沒有成為變強的一員\n\
+輸入 ns timezone 設定你的時區 不睡覺才會變強'
                 else:
                     msg = f'{user.mention}的資訊：\n\
 UTC: {L[1]}\n\
@@ -232,12 +240,41 @@ EXP: {L[2]}\n\
                 msg = '找不到該位使用者'
         await ctx.channel.send(msg)
         if(L[2] == '0'):
-            await message.channel.send(f'嫩 不睡覺才會變強')
+            await ctx.channel.send(f'嫩 不睡覺才會變強')
         L.clear()
 
 @bot.command()
-async def history(ctx):
-    pass
+async def history(ctx, *args):
+    try:
+        Users = ctx.message.guild.members
+    except:
+        await ctx.send('這個指令只能在頻道中使用')
+    else:
+        #error
+        if(len(args)>1):
+            msg = '你輸入了錯誤的格式, usage: ns history 使用者群暱稱'
+        #ns info user.displayname
+        else:
+            user = 0
+            #ns info
+            if(len(args)==0):
+                user = ctx.author
+            else:
+                for i in Users:
+                    if(args[0] == i.display_name):
+                        user = i
+                        break
+            if(user != 0):
+                L = getdetail(user)
+                if(L == -1):
+                    msg = f'{user.mention}還沒有成為變強的一員\n\
+輸入 ns timezone 設定你的時區 不睡覺才會變強'
+                else:
+                    msg = f'{user.mention}的上線歷史紀錄：\n{L.split('\t')}'
+            else:
+                msg = '找不到該位使用者'
+        await ctx.channel.send(msg)
+        L.clear()
 
 @bot.command()
 async def rank(ctx):
