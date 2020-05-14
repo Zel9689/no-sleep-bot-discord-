@@ -44,13 +44,12 @@ def set_UTC(user, msg):
     if(flag == False):
         content.append(text)
         write(f_info, content)
+    print(user.nick, '設定UTC')
 def read(File):
-    print('讀取檔案...')
     with open(File, 'a+') as f:
         f.seek(0)
         return f.readlines()
 def write(File, content):
-    print('寫入檔案...')
     with open(File, 'w+') as f:
         f.seek(0,2)
         f.writelines(content)
@@ -61,10 +60,12 @@ def getinfo(user):
         if(str(user.id) in i):
             L = i.split('\t')
             break
+    print(user.name, '資料被查詢')
     return L
 def check_cd():#check cooldown
     t = Timer(1800, check_cd)
     t.start()
+    print('##檢查時間到了##')
     status_L = check_online()
     stack_up(status_L)
     stack_clear(status_L)
@@ -132,6 +133,8 @@ def stack_clear(status_L):
         x = text.split('\t')
         if(int(x[1]) > 3):
             only_change(f_offcount, text, 1, '0')
+            user = bot.get_user(x[0])
+            print(user.nick, 'stack被清除')
             for j in content:
                 if(x[0] in j):
                     text = j
@@ -169,12 +172,14 @@ def exp_add(): #給我欲升經驗值的id
                 expVal =  float(content2[len(content2)-1].split('\t')[0])
             else:
                 for j in content2:
-                    x = j.split('\t')
-                    if(x[2] == stack):
-                        Uptime = x[1]
-                        expVal = float(x[0])
+                    y = j.split('\t')
+                    if(y[2] == stack):
+                        Uptime = y[1]
+                        expVal = float(y[0])
                         break
             only_change('info.txt', text, 2, str(round(exp + expVal, 1)))
+            user = bot.get_user(x[0])
+            print(user.nick, 'stack被清除')
 def level_cal():
     return levelVal
 
