@@ -63,7 +63,7 @@ def getinfo(user):
             break
     return L
 def check_cd():#check cooldown
-    t = Timer(1800, check_cd)
+    t = Timer(5, check_cd)
     t.start()
     status_L = check_online()
     stack_up(status_L)
@@ -90,10 +90,9 @@ def check_online():
     return status_L
 def stack_up(status_L):
     content = read(f_info)
-    for i in status_L:
-        if(i=='on'):
-            index = status_L.index(i)
-            text = content[index]
+    for i in range(len(status_L)):
+        if(status_L[i]=='on'):
+            text = content[i]
             x = text.split('\t') #該行的List形式
             Utc = x[1]
             h = time.gmtime().tm_hour + eval(Utc)
@@ -101,28 +100,42 @@ def stack_up(status_L):
                 h = h - 24
             elif(h < 0):
                 h = h + 24
-            if((h>=0 and h<7) or x[3] != '0'): #哪個時間內可以增加stack
+            if((h>=0 and h<24) or x[3] != '0'): #哪個時間內可以增加stack
                 print(x[0],'stack增加') #wow
                 only_change(f_info, text, 3, str(int(x[3])+1))
 def stack_clear(status_L):
     content = read(f_info)
     content2 = read(f_offcount)
-    for i in status_L:
-        flag = False
-        index = status_L.index(i)
-        text = content[index]
+    for i in range(len(status_L)):
+        text = content[i]
         x = text.split('\t') #該行的List形式
         stack = x[3]
-        if(i == 'off' and stack != '0'): #符合離線&&stack有值
+        flag = False
+        if(status_L[i] == 'off' and stack != '0'): #符合離線&&stack有值
             for j in content2:
                 if(x[0] in j): #檢查這個人有沒有已經在offcount.txt資料內
-                    flag = True
                     text = j
-                    x = text.split('\t')
+                    a = text.split('\t')
+                    flag = True
                     break
-        if(flag):
-            times = x[1] + 1
+            if(flag):
+                times = int(a[1]) + 1
+                only_change(f_offcount, text, 1, str(times))
+            else:
+                text = x[0] + '\t' + '1' + '\t' + '\n'
+                with open(f_offcount, 'a') as f:
+                    f.seek(0,2)
+                    f.writelines(text)
+    content2 = read(f_offcount)
+    for i in content2:
+        text = i
+        x = text.split('\t')
+        if(int(x[1]) > 3):
             only_change(f_offcount, text, 1, '0')
+            for j in content:
+                if(x[0] in j):
+                    text = j
+                    only_change(f_info, text, 3, '0')
 
 #還不會動    
 def save_time(id, mode):#'on' > 存上線 ; 'off' > 存下線
@@ -190,6 +203,7 @@ async def on_ready():
     sec = 1800 - UTC_time[1]*60 - UTC_time[2]
     if(sec < 0):
         sec = 3600 - UTC_time[1]*60 - UTC_time[2]
+    sec = 5
     t = Timer(sec, check_cd)
     t.start()
 @bot.command()
