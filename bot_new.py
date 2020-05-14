@@ -77,7 +77,6 @@ def check_cd():#check cooldown
     status_L = check_online()
     stack_up(status_L)
     stack_clear(status_L)
-    #exp_add()
     #lv_up()
 def check_online():
     status_L = []
@@ -183,35 +182,19 @@ def save_time(id, mode):#'on' > 存上線 ; 'off' > 存下線
         f.seek(0,2)
         f.writelines(text)
     print('寫入檔案...')
-def exp_add(): #給我欲升經驗值的id
-    content = read(f_info)
-    content2 = read(f_rule)
-    for i in content:
-        text = i
-        x = i.split('\t')
-        stack = x[3]
-        if(stack != '0'):
-            exp = float(x[2])
-            if(int(stack) > 8):
-                expVal =  float(content2[len(content2)-1].split('\t')[0])
-            else:
-                for j in content2:
-                    y = j.split('\t')
-                    if(y[2] == stack):
-                        Uptime = y[1]
-                        expVal = float(y[0])
-                        break
-            only_change('info.txt', text, 2, str(round(exp + expVal, 1)))
-            user = bot.get_user(int(x[0]))
-            print(user.display_name, 'exp增加')
-'''
+
 def level_up():
     content = read(f_info)
     for i in content:
         text = i
         x = text.split('\t')
-        if(float(x[4]) >= 
-'''
+        LEVEL = int(x[4])
+        A = LV_need[0]
+        B = LV_need[1]
+        for j in range(LEVEL-2):
+            C = A + B
+
+        if(float(x[2]) >= Lv_need[LEVEL]):
 def getdetail(user):
     File = './history/' + str(user.id) + '.txt'
     try:
