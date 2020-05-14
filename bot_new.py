@@ -35,6 +35,7 @@ def only_change(File, text, index, value): #File:str text:str index:int value:st
     #這行不知道是三小 List的replace小方法
     content = [text_new if x == text else x for x in content]
     write(File, content)
+    return text_new
 def set_UTC(user, msg):
     flag = False
     content = read(f_info)
@@ -189,6 +190,7 @@ def lv_up():
         text = i
         x = text.split('\t')
         LEVEL = int(x[4])
+        exp = float(x[2])
         run = True
         levelup_ed = False
         while(run):
@@ -203,7 +205,6 @@ def lv_up():
                 C = A
             if(LEVEL == 2):
                 C = B
-            exp = float(x[2])
             if(exp >= C):
                 levelup_ed = True
                 exp = exp - C
@@ -213,8 +214,8 @@ def lv_up():
         if(levelup_ed):
             user = bot.get_user(int(x[0]))
             print(user.display_name, '升等 ->',LEVEL)
-            only_change(f_info, text, 2, str(exp)) #把經驗值 -> 經驗值扣升等所需經驗
-            only_change(f_info, text, 4, str(LEVEL))
+            text_new = only_change(f_info, text, 2, str(exp)) #把經驗值 -> 經驗值扣升等所需經驗
+            only_change(f_info, text_new, 4, str(LEVEL))
 
 def getdetail(user):
     File = './history/' + str(user.id) + '.txt'
