@@ -236,12 +236,13 @@ async def info(ctx, *args):
 UTC: {L[1]}\n\
 EXP: {L[2]}\n\
 疊加狀態: {L[3]}'
+                    if(L[2] == '0'):
+                        await ctx.channel.send(f'嫩 不睡覺才會變強')
             else:
                 msg = '找不到該位使用者'
         await ctx.channel.send(msg)
-        if(L[2] == '0'):
-            await ctx.channel.send(f'嫩 不睡覺才會變強')
-        L.clear()
+        if(L != -1):
+            L.clear()
 
 @bot.command()
 async def history(ctx, *args):
