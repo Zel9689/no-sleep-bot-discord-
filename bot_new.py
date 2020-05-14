@@ -63,8 +63,8 @@ def getinfo(user):
             break
     return L
 def check_cd():#check cooldown
-    #t = Timer(5, check_cd)
-    #t.start()
+    t = Timer(5, check_cd)
+    t.start()
     status_L = check_online()
     stack_up(status_L)
     stack_clear(status_L)
@@ -174,7 +174,7 @@ def exp_add(): #給我欲升經驗值的id
                         Uptime = x[1]
                         expVal = float(x[0])
                         break
-            only_change('info.txt', text, 2, str(exp + expVal))
+            only_change('info.txt', text, 2, str(round(exp + expVal, 1)))
 def level_cal():
     return levelVal
 
