@@ -16,6 +16,7 @@ f_offcount = 'offcount.txt'
 def only_change(File, text, index, value): #File:str text:str index:int value:str
     content = read(File)
     x = text.split('\t')
+    x.pop()
     text_new = ''
     for i in range(len(x)):
         if(i == index):
