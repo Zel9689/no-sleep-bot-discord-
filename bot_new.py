@@ -1,6 +1,7 @@
 #修save_time -2會變負
 #日光節約時間選項
 #Uptime Lv 下次加多少經驗 距離下次刷新時間
+#bug: 如果online且剛才offcount有值，要清空offcount(等於沒有做到連續兩小時)
 import os
 import time
 import discord
@@ -77,7 +78,7 @@ def check_cd():#check cooldown
     status_L = check_online()
     stack_up(status_L)
     stack_clear(status_L)
-    #lv_up()
+    lv_up()
 def check_online():
     status_L = []
     content = read(f_info)
@@ -182,19 +183,39 @@ def save_time(id, mode):#'on' > 存上線 ; 'off' > 存下線
         f.seek(0,2)
         f.writelines(text)
     print('寫入檔案...')
-
-def level_up():
+def lv_up():
     content = read(f_info)
     for i in content:
         text = i
         x = text.split('\t')
         LEVEL = int(x[4])
-        A = LV_need[0]
-        B = LV_need[1]
-        for j in range(LEVEL-2):
-            C = A + B
+        run = True
+        levelup_ed = False
+        while(run):
+            A = Lv_need[0]
+            B = Lv_need[1]
+            #3等的時候迴圈要跑1圈 得C值
+            for j in range(LEVEL-2):
+                C = A + B
+                A = B
+                B = C
+            if(LEVEL == 1):
+                C = A
+            if(LEVEL == 2):
+                C = B
+            exp = float(x[2])
+            if(exp >= C):
+                levelup_ed = True
+                exp = exp - C
+                LEVEL = LEVEL + 1
+            else:
+                run = False
+        if(levelup_ed):
+            user = bot.get_user(int(x[0]))
+            print(user.display_name, '升等 ->',LEVEL)
+            only_change(f_info, text, 2, str(exp)) #把經驗值 -> 經驗值扣升等所需經驗
+            only_change(f_info, text, 4, str(LEVEL))
 
-        if(float(x[2]) >= Lv_need[LEVEL]):
 def getdetail(user):
     File = './history/' + str(user.id) + '.txt'
     try:
@@ -242,7 +263,7 @@ async def info(ctx, *args):
     else:
         #error
         if(len(args)>1):
-            msg = '你輸入了錯誤的格式, usage: ns info 使用者群暱稱'
+            msg = '你輸入了錯誤的格式, usage: ns info 使用者群暱稱(不輸入則查詢自己)'
         #ns info user.displayname
         else:
             L = [] #重置暫存器狀態
