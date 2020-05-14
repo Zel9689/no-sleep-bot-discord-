@@ -1,5 +1,6 @@
-#把讀取寫入提示放在動作前 更明確點
 #修save_time -2會變負
+#日光節約時間選項
+#Uptime Lv 下次加多少經驗 距離下次刷新時間
 import os
 import time
 import discord
@@ -12,9 +13,11 @@ bot = commands.Bot(command_prefix='ns ')
 f_info = 'info.txt'
 f_offcount = 'offcount.txt'
 f_rule = 'exp_rule.txt'
+Lv_need = [38.5, 77] #Lv_need[0]升兩等所需經驗 Lv_need[1]升兩等所需經驗 升三等是前兩個相加
 TEST = True
 Time_to_start = 1800
 Loop_time = 1800
+Time_range = 7
 
 #File:哪個檔 text:該行的str index:該行第幾個資料 value:改成啥
 def only_change(File, text, index, value): #File:str text:str index:int value:str
@@ -37,7 +40,8 @@ def set_UTC(user, msg):
     Utc = msg.content[3:len(msg.content)]
     Exp = '0'
     Stack = '0'
-    text = str(user.id) + '\t' + Utc + '\t' + Exp + '\t' + Stack + '\t' + '\n'
+    LV = '1'
+    text = str(user.id) + '\t' + Utc + '\t' + Exp + '\t' + Stack + '\t' + LV + '\t' + '\n'
     for i in content:
         if(str(user.id) in i):
             #進來代表已經有資料
@@ -73,7 +77,7 @@ def check_cd():#check cooldown
     status_L = check_online()
     stack_up(status_L)
     stack_clear(status_L)
-    exp_add()
+    #exp_add()
     #lv_up()
 def check_online():
     status_L = []
@@ -105,10 +109,25 @@ def stack_up(status_L):
                 h = h - 24
             elif(h < 0):
                 h = h + 24
-            if((h>=0 and h<7) or x[3] != '0'): #哪個時間內可以增加stack
+            if((h>=0 and h<Time_range) or x[3] != '0'): #哪個時間內可以增加stack&exp_add
                 only_change(f_info, text, 3, str(int(x[3])+1))
                 user = bot.get_user(int(x[0]))
                 print(user.display_name,'stack增加') #wow
+                #exp_add的部分
+                content2 = read(f_rule)
+                exp = float(x[2])
+                stack = x[3]
+                if(int(stack) > 8):
+                    expVal =  float(content2[len(content2)-1].split('\t')[0])
+                else:
+                    for j in content2:
+                        y = j.split('\t')
+                        if(y[2] == stack):
+                            expVal = float(y[0])
+                            break
+                only_change(f_info, text, 2, str(round(exp + expVal, 1)))
+                user = bot.get_user(int(x[0]))
+                print(user.display_name, 'exp增加')
 def stack_clear(status_L):
     content = read(f_info)
     content2 = read(f_offcount)
@@ -185,10 +204,14 @@ def exp_add(): #給我欲升經驗值的id
             only_change('info.txt', text, 2, str(round(exp + expVal, 1)))
             user = bot.get_user(int(x[0]))
             print(user.display_name, 'exp增加')
-def level_cal():
-    return levelVal
-
-
+'''
+def level_up():
+    content = read(f_info)
+    for i in content:
+        text = i
+        x = text.split('\t')
+        if(float(x[4]) >= 
+'''
 def getdetail(user):
     File = './history/' + str(user.id) + '.txt'
     try:
@@ -196,7 +219,6 @@ def getdetail(user):
     except:
         content = -1
     return content
-
 async def send(channel, msg):
     channel = bot.get_channel(channel)
     await channel.send(msg)
@@ -227,7 +249,6 @@ async def timezone(ctx):
     msg = await bot.wait_for('message', check=check)
     set_UTC(user, msg)
     await user.dm_channel.send(f'你輸入了UTC{msg.content[3:len(msg.content)]}，你已經加入變強的行列')
-
 @bot.command()
 async def info(ctx, *args):
     #await ctx.send('{} arguments: {}'.format(len(args), ', '.join(args)))
@@ -260,13 +281,13 @@ async def info(ctx, *args):
                     msg = f'{user.mention}的資訊：\n\
 UTC: {L[1]}\n\
 EXP: {L[2]}\n\
-疊加狀態: {L[3]}'
+疊加狀態: {L[3]}\n\
+LV: {L[4]}'
                     if(L[2] == '0'):
                         await ctx.channel.send(f'嫩 不睡覺才會變強')
             else:
                 msg = '找不到該位使用者'
         await ctx.channel.send(msg)
-
 @bot.command()
 async def history(ctx, *args):
     try:
@@ -302,6 +323,9 @@ async def history(ctx, *args):
             else:
                 msg = '找不到該位使用者'
         await ctx.channel.send(msg)
+@bot.command()
+async def now(ctx):
+    pass
 
 @bot.command()
 async def rank(ctx):
