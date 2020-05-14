@@ -12,6 +12,10 @@ bot = commands.Bot(command_prefix='ns ')
 f_info = 'info.txt'
 f_offcount = 'offcount.txt'
 f_rule = 'exp_rule.txt'
+TEST = True
+Time_to_start = 1800
+Loop_time = 1800
+
 #File:哪個檔 text:該行的str index:該行第幾個資料 value:改成啥
 def only_change(File, text, index, value): #File:str text:str index:int value:str
     content = read(File)
@@ -44,7 +48,7 @@ def set_UTC(user, msg):
     if(flag == False):
         content.append(text)
         write(f_info, content)
-    print(user.nick, '設定UTC')
+    print(user.display_name, '設定UTC')
 def read(File):
     with open(File, 'a+') as f:
         f.seek(0)
@@ -60,10 +64,10 @@ def getinfo(user):
         if(str(user.id) in i):
             L = i.split('\t')
             break
-    print(user.name, '資料被查詢')
+    print(user.display_name, '資料被查詢')
     return L
 def check_cd():#check cooldown
-    t = Timer(1800, check_cd)
+    t = Timer(Loop_time, check_cd)
     t.start()
     print('##檢查時間到了##')
     status_L = check_online()
@@ -102,8 +106,9 @@ def stack_up(status_L):
             elif(h < 0):
                 h = h + 24
             if((h>=0 and h<7) or x[3] != '0'): #哪個時間內可以增加stack
-                print(x[0],'stack增加') #wow
                 only_change(f_info, text, 3, str(int(x[3])+1))
+                user = bot.get_user(int(x[0]))
+                print(user.display_name,'stack增加') #wow
 def stack_clear(status_L):
     content = read(f_info)
     content2 = read(f_offcount)
@@ -133,8 +138,8 @@ def stack_clear(status_L):
         x = text.split('\t')
         if(int(x[1]) > 3):
             only_change(f_offcount, text, 1, '0')
-            user = bot.get_user(x[0])
-            print(user.nick, 'stack被清除')
+            user = bot.get_user(int(x[0]))
+            print(user.name, 'stack被清除')
             for j in content:
                 if(x[0] in j):
                     text = j
@@ -178,8 +183,8 @@ def exp_add(): #給我欲升經驗值的id
                         expVal = float(y[0])
                         break
             only_change('info.txt', text, 2, str(round(exp + expVal, 1)))
-            user = bot.get_user(x[0])
-            print(user.nick, 'stack被清除')
+            user = bot.get_user(int(x[0]))
+            print(user.display_name, 'exp增加')
 def level_cal():
     return levelVal
 
@@ -200,9 +205,11 @@ async def send(channel, msg):
 async def on_ready():
     print(bot.user.name, 'has connected to Discord!')
     UTC_time = [time.gmtime().tm_hour, time.gmtime().tm_min, time.gmtime().tm_sec]
-    sec = 1800 - UTC_time[1]*60 - UTC_time[2]
+    sec = Time_to_start - UTC_time[1]*60 - UTC_time[2]
     if(sec < 0):
         sec = 3600 - UTC_time[1]*60 - UTC_time[2]
+    if(TEST):
+        sec = 1
     t = Timer(sec, check_cd)
     t.start()
 @bot.command()
