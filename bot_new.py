@@ -1,4 +1,5 @@
-#限制utc輸入不符合規定
+#修stack_clear
+#修save_time -2會變負
 import os
 import time
 import discord
@@ -9,6 +10,7 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 bot = commands.Bot(command_prefix='ns ')
 clear_L = []
+f_info = 'info.txt'
 
 #obj: id utc exp stack 只換指定obj的值
 def only_change(File, text, obj, value): #File:str text:str obj:str value:str
@@ -68,42 +70,44 @@ def getinfo(user):
             break
     return L
 def check_cd():#check cooldown
-    t = Timer(1800, check_online)
+    t = Timer(1800, check_cd)
     t.start()
+    status_L = check_online()
+    stack_up(status_L)
+    stack_clear()
+    exp_add()
+    lv_up()
+
 
 def check_online():
-    check_cd()
-    File = 'info.txt'
-    content = read(File)
+    status_L = []
+    content = read(f_info)
     for i in content:
         text = i.split('\t')
-        status = 'off'
         for j in bot.guilds:
             user = discord.utils.find(lambda g: g.id==eval(text[0]), j.members)
             #進來代表至少找到一個他在線上的證據
             if(user != None and \
                 (user.status.value == 'online' or user.web_status.value == 'online' \
                     or user.mobile_status.value == 'online' \
-                        or (user.voice != None and user.voice.afk == False)\
-                )\
-              ):
+                        or (user.voice != None and user.voice.afk == False))):
                 status = 'on'
                 print(user.display_name,'在線上') #wow
-                Utc = text[1]
-                h = time.gmtime().tm_hour + eval(Utc)
-                if(h >= 24):
-                    h = h - 24
-                elif(h < 0):
-                    h = h + 24
-                if((h>=0 and h<7) or text[3] != '0'): #哪個時間內可以增加stack
-                    if(text[3] == '0'):
-                        save_time(user.id, 'on')
-                    print(user.display_name,'wow') #wow
-                    only_change(File, i, 'stack', str(int(text[3])+1))
-                    exp_add(user.id)
+                
                 break
-        if(user != None):
-            stack_clear(user, status)
+    return status_L
+def stack_up(status_L):
+    Utc = text[1]
+    h = time.gmtime().tm_hour + eval(Utc)
+    if(h >= 24):
+        h = h - 24
+    elif(h < 0):
+        h = h + 24
+    if((h>=0 and h<7) or text[3] != '0'): #哪個時間內可以增加stack
+        if(text[3] == '0'): #可能要更改紀錄上線的規則
+            save_time(user.id, 'on')
+        print(user.display_name,'wow') #wow
+        only_change(File, i, 'stack', str(int(text[3])+1))
 #還不會動    
 def save_time(id, mode):#'on' > 存上線 ; 'off' > 存下線
     UTC_time = [time.gmtime().tm_year, time.gmtime().tm_mon, time.gmtime().tm_mday, time.gmtime().tm_hour, time.gmtime().tm_min]
@@ -186,7 +190,7 @@ async def on_ready():
     sec = 1800 - UTC_time[1]*60 - UTC_time[2]
     if(sec < 0):
         sec = 3600 - UTC_time[1]*60 - UTC_time[2]
-    t = Timer(sec, check_online)
+    t = Timer(sec, check_cd)
     t.start()
 @bot.command()
 async def timezone(ctx):
