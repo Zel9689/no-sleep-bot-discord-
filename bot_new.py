@@ -1,5 +1,4 @@
 #把讀取寫入提示放在動作前 更明確點
-#修stack_clear
 #修save_time -2會變負
 import os
 import time
@@ -12,6 +11,7 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 bot = commands.Bot(command_prefix='ns ')
 f_info = 'info.txt'
 f_offcount = 'offcount.txt'
+f_rule = 'exp_rule.txt'
 #File:哪個檔 text:該行的str index:該行第幾個資料 value:改成啥
 def only_change(File, text, index, value): #File:str text:str index:int value:str
     content = read(File)
@@ -63,12 +63,12 @@ def getinfo(user):
             break
     return L
 def check_cd():#check cooldown
-    t = Timer(5, check_cd)
-    t.start()
+    #t = Timer(5, check_cd)
+    #t.start()
     status_L = check_online()
     stack_up(status_L)
     stack_clear(status_L)
-    #exp_add()
+    exp_add()
     #lv_up()
 def check_online():
     status_L = []
@@ -135,9 +135,7 @@ def stack_clear(status_L):
             for j in content:
                 if(x[0] in j):
                     text = j
-                    only_change(f_info, text, 3, '0')
-
-#還不會動    
+                    only_change(f_info, text, 3, '0')   
 def save_time(id, mode):#'on' > 存上線 ; 'off' > 存下線
     UTC_time = [time.gmtime().tm_year, time.gmtime().tm_mon, time.gmtime().tm_mday, time.gmtime().tm_hour, time.gmtime().tm_min]
     if(mode == 'on'):
@@ -158,30 +156,27 @@ def save_time(id, mode):#'on' > 存上線 ; 'off' > 存下線
         f.seek(0,2)
         f.writelines(text)
     print('寫入檔案...')
+def exp_add(): #給我欲升經驗值的id
+    content = read(f_info)
+    content2 = read(f_rule)
+    for i in content:
+        text = i
+        x = i.split('\t')
+        stack = x[3]
+        if(stack != '0'):
+            exp = float(x[2])
+            if(int(stack) > 8):
+                expVal =  float(content2[len(content2)-1].split('\t')[0])
+            else:
+                for j in content2:
+                    x = j.split('\t')
+                    if(x[2] == stack):
+                        Uptime = x[1]
+                        expVal = float(x[0])
+                        break
+            only_change('info.txt', text, 2, str(exp + expVal))
 def level_cal():
     return levelVal
-def exp_add(id): #給我欲升經驗值的id
-    File = 'info.txt'
-    content = read(File)
-    for i in content:
-        if(str(id) in i):
-            text = i
-            x = i.split('\t')
-            break
-    stack = x[3]
-    exp = eval(x[2])
-    File = 'exp_rule.txt'
-    content = read(File)
-    if(int(stack) > 8):
-        expVal =  eval(content[len(content)-1].split('\t')[0])
-    else:
-        for i in content:
-            x = i.split()
-            if(x[2] == stack):
-                Uptime = x[1]
-                expVal = eval(x[0])
-                break
-    only_change('info.txt', text, 2, str(exp + expVal))
 
 
 def getdetail(user):
