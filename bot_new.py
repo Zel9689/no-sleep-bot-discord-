@@ -63,7 +63,7 @@ def getinfo(user):
             break
     return L
 def check_cd():#check cooldown
-    t = Timer(5, check_cd)
+    t = Timer(1800, check_cd)
     t.start()
     status_L = check_online()
     stack_up(status_L)
@@ -100,7 +100,7 @@ def stack_up(status_L):
                 h = h - 24
             elif(h < 0):
                 h = h + 24
-            if((h>=0 and h<24) or x[3] != '0'): #哪個時間內可以增加stack
+            if((h>=0 and h<7) or x[3] != '0'): #哪個時間內可以增加stack
                 print(x[0],'stack增加') #wow
                 only_change(f_info, text, 3, str(int(x[3])+1))
 def stack_clear(status_L):
@@ -198,7 +198,6 @@ async def on_ready():
     sec = 1800 - UTC_time[1]*60 - UTC_time[2]
     if(sec < 0):
         sec = 3600 - UTC_time[1]*60 - UTC_time[2]
-    sec = 5
     t = Timer(sec, check_cd)
     t.start()
 @bot.command()
