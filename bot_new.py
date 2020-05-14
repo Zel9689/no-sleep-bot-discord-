@@ -2,6 +2,9 @@
 #日光節約時間選項
 #Uptime Lv 下次加多少經驗 距離下次刷新時間
 #bug: 如果online且剛才offcount有值，要清空offcount(等於沒有做到連續兩小時)
+#ns now 使用者
+#ns rule
+#你的最高疊加紀錄
 import os
 import time
 import discord
@@ -111,7 +114,7 @@ def stack_up(status_L):
             elif(h < 0):
                 h = h + 24
             if((h>=0 and h<Time_range) or x[3] != '0'): #哪個時間內可以增加stack&exp_add
-                only_change(f_info, text, 3, str(int(x[3])+1))
+                text_new = only_change(f_info, text, 3, str(int(x[3])+1))
                 user = bot.get_user(int(x[0]))
                 print(user.display_name,'stack增加') #wow
                 #exp_add的部分
@@ -126,7 +129,7 @@ def stack_up(status_L):
                         if(y[2] == stack):
                             expVal = float(y[0])
                             break
-                only_change(f_info, text, 2, str(round(exp + expVal, 1)))
+                only_change(f_info, text_new, 2, str(round(exp + expVal, 1)))
                 user = bot.get_user(int(x[0]))
                 print(user.display_name, 'exp增加')
 def stack_clear(status_L):
