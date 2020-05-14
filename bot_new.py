@@ -1,3 +1,4 @@
+#把讀取寫入提示放在動作前 更明確點
 #修stack_clear
 #修save_time -2會變負
 import os
@@ -9,33 +10,25 @@ from discord.ext import commands
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 bot = commands.Bot(command_prefix='ns ')
-clear_L = []
 f_info = 'info.txt'
-
-#obj: id utc exp stack 只換指定obj的值
-def only_change(File, text, obj, value): #File:str text:str obj:str value:str
+f_offcount = 'offcount.txt'
+#File:哪個檔 text:該行的str index:該行第幾個資料 value:改成啥
+def only_change(File, text, index, value): #File:str text:str index:int value:str
     content = read(File)
     x = text.split('\t')
-    Id = x[0]
-    Utc = x[1]
-    Exp = x[2]
-    Stack = x[3]
-    if(obj == 'id'):
-        Id = value
-    elif(obj == 'utc'):
-        Utc = value
-    elif(obj == 'exp'):
-        Exp = value
-    elif(obj == 'stack'):
-        Stack = value
-    text_new = Id + '\t' + Utc + '\t' + Exp + '\t' + Stack + '\t' + '\n'
+    text_new = ''
+    for i in range(len(x)):
+        if(i == index):
+            text_new = text_new + value + '\t'
+        else:
+            text_new = text_new + x[i] + '\t' 
+    text_new = text_new + '\n'
     #這行不知道是三小 List的replace小方法
     content = [text_new if x == text else x for x in content]
     write(File, content)
 def set_UTC(user, msg):
     flag = False
-    File = 'info.txt'
-    content = read(File)
+    content = read(f_info)
     Utc = msg.content[3:len(msg.content)]
     Exp = '0'
     Stack = '0'
@@ -43,13 +36,13 @@ def set_UTC(user, msg):
     for i in content:
         if(str(user.id) in i):
             #進來代表已經有資料
-            only_change(File, i, 'utc', Utc)
+            only_change(f_info, i, 1, Utc)
             flag = True
             break
     #沒資料的話
     if(flag == False):
         content.append(text)
-        write(File, content)
+        write(f_info, content)
 def read(File):
     print('讀取檔案...')
     with open(File, 'a+') as f:
@@ -61,8 +54,7 @@ def write(File, content):
         f.seek(0,2)
         f.writelines(content)
 def getinfo(user):
-    File = 'info.txt'
-    content = read(File)
+    content = read(f_info)
     L = -1
     for i in content:
         if(str(user.id) in i):
@@ -74,15 +66,14 @@ def check_cd():#check cooldown
     t.start()
     status_L = check_online()
     stack_up(status_L)
-    stack_clear()
-    exp_add()
-    lv_up()
-
-
+    stack_clear(status_L)
+    #exp_add()
+    #lv_up()
 def check_online():
     status_L = []
     content = read(f_info)
     for i in content:
+        status = 'off' #假設使用者離線
         text = i.split('\t')
         for j in bot.guilds:
             user = discord.utils.find(lambda g: g.id==eval(text[0]), j.members)
@@ -91,23 +82,47 @@ def check_online():
                 (user.status.value == 'online' or user.web_status.value == 'online' \
                     or user.mobile_status.value == 'online' \
                         or (user.voice != None and user.voice.afk == False))):
-                status = 'on'
+                status = 'on' #刷新成上線
                 print(user.display_name,'在線上') #wow
-                
                 break
+        status_L.append(status)
     return status_L
 def stack_up(status_L):
-    Utc = text[1]
-    h = time.gmtime().tm_hour + eval(Utc)
-    if(h >= 24):
-        h = h - 24
-    elif(h < 0):
-        h = h + 24
-    if((h>=0 and h<7) or text[3] != '0'): #哪個時間內可以增加stack
-        if(text[3] == '0'): #可能要更改紀錄上線的規則
-            save_time(user.id, 'on')
-        print(user.display_name,'wow') #wow
-        only_change(File, i, 'stack', str(int(text[3])+1))
+    content = read(f_info)
+    for i in status_L:
+        if(i=='on'):
+            index = status_L.index(i)
+            text = content[index]
+            x = text.split('\t') #該行的List形式
+            Utc = x[1]
+            h = time.gmtime().tm_hour + eval(Utc)
+            if(h >= 24):
+                h = h - 24
+            elif(h < 0):
+                h = h + 24
+            if((h>=0 and h<7) or x[3] != '0'): #哪個時間內可以增加stack
+                print(x[0],'stack增加') #wow
+                only_change(f_info, text, 3, str(int(x[3])+1))
+def stack_clear(status_L):
+    content = read(f_info)
+    content2 = read(f_offcount)
+    for i in status_L:
+        flag = False
+        index = status_L.index(i)
+        text = content[index]
+        x = text.split('\t') #該行的List形式
+        stack = x[3]
+        if(i == 'off' and stack != '0'): #符合離線&&stack有值
+            for j in content2:
+                if(x[0] in j): #檢查這個人有沒有已經在offcount.txt資料內
+                    flag = True
+                    text = j
+                    x = text.split('\t')
+                    break
+        if(flag):
+            times = x[1] + 1
+            only_change(f_offcount, text, 1, '0')
+
 #還不會動    
 def save_time(id, mode):#'on' > 存上線 ; 'off' > 存下線
     UTC_time = [time.gmtime().tm_year, time.gmtime().tm_mon, time.gmtime().tm_mday, time.gmtime().tm_hour, time.gmtime().tm_min]
@@ -152,24 +167,8 @@ def exp_add(id): #給我欲升經驗值的id
                 Uptime = x[1]
                 expVal = eval(x[0])
                 break
-    only_change('info.txt', text, 'exp', str(exp + expVal))
+    only_change('info.txt', text, 2, str(exp + expVal))
 
-def stack_clear(user, status):
-    global clear_L
-    if(status == 'off'):
-        File = 'info.txt'
-        content = read(File)
-        id = str(user.id)
-        for i in content:
-            if(id in i):
-                text = i
-                x = i.split('\t')
-                stack = x[3]
-        if(stack != '0'):
-            clear_L.append(id)
-        if(clear_L.count(id) > 3):
-            only_change(File, text, 'stack', '0')
-            save_time(user.id, 'off')
 
 def getdetail(user):
     File = './history/' + str(user.id) + '.txt'
@@ -221,6 +220,7 @@ async def info(ctx, *args):
             msg = '你輸入了錯誤的格式, usage: ns info 使用者群暱稱'
         #ns info user.displayname
         else:
+            L = [] #重置暫存器狀態
             user = 0
             #ns info
             if(len(args)==0):
@@ -245,8 +245,6 @@ EXP: {L[2]}\n\
             else:
                 msg = '找不到該位使用者'
         await ctx.channel.send(msg)
-        if(L != -1):
-            L.clear()
 
 @bot.command()
 async def history(ctx, *args):
@@ -260,6 +258,7 @@ async def history(ctx, *args):
             msg = '你輸入了錯誤的格式, usage: ns history 使用者群暱稱'
         #ns info user.displayname
         else:
+            L = []
             user = 0
             #ns info
             if(len(args)==0):
@@ -282,7 +281,6 @@ async def history(ctx, *args):
             else:
                 msg = '找不到該位使用者'
         await ctx.channel.send(msg)
-        L.clear()
 
 @bot.command()
 async def rank(ctx):
