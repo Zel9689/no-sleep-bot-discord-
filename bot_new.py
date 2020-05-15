@@ -26,7 +26,7 @@ image = ['https://imgur.com/SOxeu7c','https://imgur.com/3AFdpJy','https://imgur.
                 'https://imgur.com/ZTOVvJR','https://imgur.com/MGxkUMa','https://imgur.com/rFoJGVt','https://imgur.com/6RjGgaU',\
                     'https://imgur.com/l2EIjLe','https://imgur.com/H7p7ycP','https://imgur.com/y5uaRDc','https://imgur.com/EWhgxvy']
 TEST = False
-Time_to_start = 1800
+Time_to_start = 1800 #設定幾分觸發(e.g. 想要時間XX點12分觸發 Time_to_start = 720)
 Loop_time = 1800
 Time_range = 7
 
@@ -127,20 +127,22 @@ def stack_up(status_L):
                 print(user.display_name,'stack增加') #wow
                 stack = str(int(x[3])+1)
                 #exp_add的部分
-                content2 = read(f_rule)
                 exp = float(x[2])
-                if(int(stack) > 8):
-                    expVal =  float(content2[len(content2)-1].split('\t')[0])
-                else:
-                    for j in content2:
-                        y = j.split('\t')
-                        if(y[2] == stack):
-                            expVal = float(y[0])
-                            break
+                expVal = stack_exp(stack)
                 text_new = only_change(f_info, text, 3, stack)
                 only_change(f_info, text_new, 2, str(round(exp + expVal, 1)))
                 user = bot.get_user(int(x[0]))
                 print(user.display_name, 'exp增加')
+def stack_exp(stack):
+    content2 = read(f_rule)
+    stack = int(stack)
+    if(stack > 8):
+        return float(content2[len(content2)-1].split('\t')[0])
+    else:
+        for i in content2:
+            x = i.split('\t')
+            if(x[2] == str(stack)):
+                return float(x[0])
 def stack_clear(status_L):
     content = read(f_info)
     content2 = read(f_offcount)
@@ -206,17 +208,7 @@ def lv_up():
         run = True
         levelup_ed = False
         while(run):
-            A = Lv_need[0]
-            B = Lv_need[1]
-            #3等的時候迴圈要跑1圈 得C值
-            for j in range(LEVEL-2):
-                C = A + B
-                A = B
-                B = C
-            if(LEVEL == 1):
-                C = A
-            if(LEVEL == 2):
-                C = B
+            C = next_lv_exp(LEVEL)
             if(exp >= C):
                 levelup_ed = True
                 exp = exp - C
@@ -228,6 +220,19 @@ def lv_up():
             print(user.display_name, '升等 ->',LEVEL)
             text_new = only_change(f_info, text, 2, str(round(exp, 1))) #把經驗值 -> 經驗值扣升等所需經驗
             only_change(f_info, text_new, 4, str(LEVEL))
+def next_lv_exp(LEVEL):
+    A = Lv_need[0]
+    B = Lv_need[1]
+    #3等的時候迴圈要跑1圈 得C值
+    for j in range(LEVEL-2):
+        C = A + B
+        A = B
+        B = C
+    if(LEVEL == 1):
+        C = A
+    if(LEVEL == 2):
+        C = B
+    return C
 
 def getdetail(user):
     File = './history/' + str(user.id) + '.txt'
@@ -256,14 +261,17 @@ def gettime(user):
         DELTA = timezone(timedelta(hours=int(Utc)+int(Dst)))
         local_dt = dt.astimezone(DELTA)
     return local_dt
-
-@bot.event
-async def on_ready():
-    print(bot.user.name, 'has connected to Discord!')
+def sec_to_start():
     UTC_time = [time.gmtime().tm_hour, time.gmtime().tm_min, time.gmtime().tm_sec]
     sec = Time_to_start - UTC_time[1]*60 - UTC_time[2]
     if(sec < 0):
         sec = 3600 - UTC_time[1]*60 - UTC_time[2]
+    return sec
+
+@bot.event
+async def on_ready():
+    print(bot.user.name, 'has connected to Discord!')
+    sec = sec_to_start()
     if(TEST):
         sec = 1
     t = Timer(sec, check_cd)
@@ -312,15 +320,16 @@ async def info(ctx, *args):
                     msg = f'{user.mention}還沒有成為變強的一員\n\
 輸入 ns timezone 設定你的時區 不睡覺才會變強'
                 else:
+                    sec = sec_to_start()
                     if(L[6]=='1'):
                         Dst = 'Yes'
                     else:
                         Dst = 'No'
                     msg = f'{user.mention}的資訊：\n\
-UTC: {L[1]} 日光節約時間: {Dst}\n\
-EXP: {L[2]} LV: {L[4]}\n\
-疊加狀態: {L[3]} 下次增加EXP：{} 下次升等所需EXP: {}\n\
-距離下次刷新時間: {}'
+UTC: {L[1]} (日光節約時間: {Dst})\n\
+LV: {L[4]} ({L[2]} / {next_lv_exp(int(L[4]))})\n\
+疊加狀態: {L[3]} (+EXP: {stack_exp(L[3])})\n\
+距離下次刷新時間: {sec//60}分{sec%60}秒'
                     if(L[2] == '0'):
                         await ctx.channel.send(f'嫩 不睡覺才會變強')
             else:
