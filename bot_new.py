@@ -1,7 +1,4 @@
 #修save_time -2會變負
-#bug: 如果online且剛才offcount有值，要清空offcount(等於沒有做到連續兩小時)
-#ns rule
-#你的最高疊加紀錄、總熬夜時間
 import os
 import time
 import discord
@@ -175,6 +172,13 @@ def stack_clear(status_L):
                 with open(f_offcount, 'a') as f:
                     f.seek(0,2)
                     f.writelines(text)
+        if(status_L[i] == 'on'):
+            for j in content2:
+                if(x[0] in j):
+                    text = j
+                    a = text.split('\t')
+                    if(a[1] != '0'):
+                        only_change(f_offcount, text, 1, '0')
     content2 = read(f_offcount)
     for i in content2:
         text = i
@@ -430,5 +434,15 @@ async def now(ctx, *args):
             else:
                 msg = '找不到該位使用者'
         await ctx.channel.send(msg)
-
+@bot.command()
+async def rule(ctx):
+    user = ctx.author
+    await user.create_dm()
+    await user.dm_channel.send(
+        f'這是一個讓你熬夜時會升等的BOT，只要在晚上12點~早上7點之間在線上就會加經驗值\n'
+        f'如果你整夜都沒睡覺，即使超過早上7點還是會繼續加經驗值！\n'
+        f'除此之外每個人都會有一個「疊加狀態」，疊加狀態越高加的經驗就越多\n'
+        f'但中間只要連續離線2小時，疊加狀態就會被清除哦！\n'
+        f'輸入ns help可以有哪些可以用的指令'
+    )
 bot.run(TOKEN)
