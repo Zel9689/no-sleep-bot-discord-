@@ -19,6 +19,12 @@ f_info = 'info.txt'
 f_offcount = 'offcount.txt'
 f_rule = 'exp_rule.txt'
 Lv_need = [38.5, 77] #Lv_need[0]升兩等所需經驗 Lv_need[1]升兩等所需經驗 升三等是前兩個相加
+image = ['https://imgur.com/SOxeu7c','https://imgur.com/3AFdpJy','https://imgur.com/4wQUnw2','https://imgur.com/MzxV0eU',\
+    'https://imgur.com/pP9apDr','https://imgur.com/yhBzoJ3','https://imgur.com/jlahFPB','https://imgur.com/lZXT4OC',\
+        'https://imgur.com/cggySDj','https://imgur.com/nbsxbkz','https://imgur.com/SvvwaP3','https://imgur.com/ejFydUg',\
+            'https://imgur.com/BBnxfLf','https://imgur.com/lZXT4OC','https://imgur.com/azIji74','https://imgur.com/fQYJ2EF',\
+                'https://imgur.com/ZTOVvJR','https://imgur.com/MGxkUMa','https://imgur.com/rFoJGVt','https://imgur.com/6RjGgaU',\
+                    'https://imgur.com/l2EIjLe','https://imgur.com/H7p7ycP','https://imgur.com/y5uaRDc','https://imgur.com/EWhgxvy']
 TEST = False
 Time_to_start = 1800
 Loop_time = 1800
@@ -47,7 +53,9 @@ def set_UTC(user, msg):
     Exp = '0'
     Stack = '0'
     LV = '1'
-    text = str(user.id) + '\t' + Utc + '\t' + Exp + '\t' + Stack + '\t' + LV + '\t' + '\n'
+    Rank = 'none'
+    Dst = '0'
+    text = str(user.id) + '\t' + Utc + '\t' + Exp + '\t' + Stack + '\t' + LV + '\t' + Rank + '\t' + Dst + '\t' + '\n'
     for i in content:
         if(str(user.id) in i):
             #進來代表已經有資料
@@ -232,6 +240,22 @@ async def send(channel, msg):
     channel = bot.get_channel(channel)
     await channel.send(msg)
 
+def gettime(user):
+    flag = False
+    local_dt = 'not_found'
+    content = read(f_info)
+    for i in content:
+        if(str(user.id) in i):
+            x = i.split('\t')
+            Utc = x[1]
+            Dst = x[5]
+            flag = True
+    if(flag):
+        dt = datetime.utcnow()
+        DELTA = timezone(timedelta(hours=int(Utc)+int(Dst)))
+        local_dt = dt.astimezone(DELTA)
+    return local_dt
+
 @bot.event
 async def on_ready():
     print(bot.user.name, 'has connected to Discord!')
@@ -243,8 +267,8 @@ async def on_ready():
         sec = 1
     t = Timer(sec, check_cd)
     t.start()
-@bot.command()
-async def timezone(ctx):
+@bot.command(name='timezone')
+async def tz(ctx):
     user = ctx.author
     await user.create_dm()
     await user.dm_channel.send(
@@ -347,11 +371,10 @@ async def now(ctx, *args):
         #error
         if(len(args)>1):
             msg = '你輸入了錯誤的格式, usage: ns info 使用者群暱稱(不輸入則查詢自己)'
-        #ns info user.displayname
+        #ns now user.displayname
         else:
-            L = [] #重置暫存器狀態
             user = 0
-            #ns info
+            #ns now
             if(len(args)==0):
                 user = ctx.author
             else:
@@ -365,28 +388,13 @@ async def now(ctx, *args):
                     msg = f'{user.mention}還沒有成為變強的一員\n\
 輸入 ns timezone 設定你的時區 不睡覺才會變強'
                 else:
-                    msg = f'{user.mention}的在地時間：{}'
-                    if(L[2] == '0'):
-                        await ctx.channel.send(f'嫩 不睡覺才會變強')
+                    msg = f'{user.mention}的在地時間：{L}'
+                    for i in range(24):
+                        if(L.hour == i):
+                            await ctx.channel.send(image[i])
             else:
                 msg = '找不到該位使用者'
         await ctx.channel.send(msg)
-
-def gettime(user):
-    Utc = 'not_found'
-    content = read(f_info)
-    for i in content:
-        if(str(user.id) in i):
-            x = i.split('\t')
-            Utc = x[1]
-            Dst = x[5]
-    if(Utc != 'not_found'):
-        UTC_time = [time.gmtime().tm_year, time.gmtime().tm_mon, time.gmtime().tm_mday, time.gmtime().tm_hour, time.gmtime().tm_min]
-        hr = UTC_time[3] + Utc + Dst
-        if(hr >= 24):
-            UTC_time[2] = UTC_time[2] + 1
-        if(hr < 0):
-            UTC_time[2] = UTC_time[2] - 1
 '''
 bot.run(TOKEN)
 
