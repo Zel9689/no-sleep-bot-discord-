@@ -4,7 +4,7 @@
 #bug: 如果online且剛才offcount有值，要清空offcount(等於沒有做到連續兩小時)
 #ns now 使用者
 #ns rule
-#你的最高疊加紀錄
+#你的最高疊加紀錄、總熬夜時間
 import os
 import time
 import discord
@@ -114,13 +114,12 @@ def stack_up(status_L):
             elif(h < 0):
                 h = h + 24
             if((h>=0 and h<Time_range) or x[3] != '0'): #哪個時間內可以增加stack&exp_add
-                text_new = only_change(f_info, text, 3, str(int(x[3])+1))
                 user = bot.get_user(int(x[0]))
                 print(user.display_name,'stack增加') #wow
+                stack = str(int(x[3])+1)
                 #exp_add的部分
                 content2 = read(f_rule)
                 exp = float(x[2])
-                stack = x[3]
                 if(int(stack) > 8):
                     expVal =  float(content2[len(content2)-1].split('\t')[0])
                 else:
@@ -129,6 +128,7 @@ def stack_up(status_L):
                         if(y[2] == stack):
                             expVal = float(y[0])
                             break
+                text_new = only_change(f_info, text, 3, stack)
                 only_change(f_info, text_new, 2, str(round(exp + expVal, 1)))
                 user = bot.get_user(int(x[0]))
                 print(user.display_name, 'exp增加')
