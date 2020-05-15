@@ -11,6 +11,7 @@ import discord
 from threading import Timer
 from dotenv import load_dotenv
 from discord.ext import commands
+from datetime import datetime,timezone,timedelta
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 bot = commands.Bot(command_prefix='ns ')
@@ -217,7 +218,7 @@ def lv_up():
         if(levelup_ed):
             user = bot.get_user(int(x[0]))
             print(user.display_name, '升等 ->',LEVEL)
-            text_new = only_change(f_info, text, 2, str(exp)) #把經驗值 -> 經驗值扣升等所需經驗
+            text_new = only_change(f_info, text, 2, str(round(exp, 1))) #把經驗值 -> 經驗值扣升等所需經驗
             only_change(f_info, text_new, 4, str(LEVEL))
 
 def getdetail(user):
@@ -305,7 +306,7 @@ async def history(ctx, *args):
     else:
         #error
         if(len(args)>1):
-            msg = '你輸入了錯誤的格式, usage: ns history 使用者群暱稱'
+            msg = '你輸入了錯誤的格式, usage: ns history 使用者群暱稱(不輸入則查詢自己)'
         #ns info user.displayname
         else:
             L = []
@@ -331,12 +332,62 @@ async def history(ctx, *args):
             else:
                 msg = '找不到該位使用者'
         await ctx.channel.send(msg)
-@bot.command()
-async def now(ctx):
-    pass
 
 @bot.command()
 async def rank(ctx):
     pass
+'''
+@bot.command()
+async def now(ctx, *args):
+    try:
+        Users = ctx.message.guild.members
+    except:
+        await ctx.send('這個指令只能在頻道中使用')
+    else:
+        #error
+        if(len(args)>1):
+            msg = '你輸入了錯誤的格式, usage: ns info 使用者群暱稱(不輸入則查詢自己)'
+        #ns info user.displayname
+        else:
+            L = [] #重置暫存器狀態
+            user = 0
+            #ns info
+            if(len(args)==0):
+                user = ctx.author
+            else:
+                for i in Users:
+                    if(args[0] == i.display_name):
+                        user = i
+                        break
+            if(user != 0):
+                L = gettime(user)
+                if(L == 'not_found'):
+                    msg = f'{user.mention}還沒有成為變強的一員\n\
+輸入 ns timezone 設定你的時區 不睡覺才會變強'
+                else:
+                    msg = f'{user.mention}的在地時間：{}'
+                    if(L[2] == '0'):
+                        await ctx.channel.send(f'嫩 不睡覺才會變強')
+            else:
+                msg = '找不到該位使用者'
+        await ctx.channel.send(msg)
 
+def gettime(user):
+    Utc = 'not_found'
+    content = read(f_info)
+    for i in content:
+        if(str(user.id) in i):
+            x = i.split('\t')
+            Utc = x[1]
+            Dst = x[5]
+    if(Utc != 'not_found'):
+        UTC_time = [time.gmtime().tm_year, time.gmtime().tm_mon, time.gmtime().tm_mday, time.gmtime().tm_hour, time.gmtime().tm_min]
+        hr = UTC_time[3] + Utc + Dst
+        if(hr >= 24):
+            UTC_time[2] = UTC_time[2] + 1
+        if(hr < 0):
+            UTC_time[2] = UTC_time[2] - 1
+'''
 bot.run(TOKEN)
+
+#DST 日光節約時間
