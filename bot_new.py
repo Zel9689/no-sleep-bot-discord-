@@ -1,8 +1,5 @@
 #修save_time -2會變負
-#日光節約時間選項
-#Lv 下次加多少經驗 距離下次刷新時間
 #bug: 如果online且剛才offcount有值，要清空offcount(等於沒有做到連續兩小時)
-#ns now 使用者
 #ns rule
 #你的最高疊加紀錄、總熬夜時間
 import os
@@ -67,6 +64,18 @@ def set_UTC(user, msg):
         content.append(text)
         write(f_info, content)
     print(user.display_name, '設定UTC')
+def set_DST(user, msg):
+    content = read(f_info)
+    for i in content:
+        if(str(user.id) in i):
+            if(msg.upper() == 'Y'):
+                only_change(f_info, i, 6, '1')
+                return False
+            elif(msg.upper() == 'N'):
+                only_change(f_info, i, 6, '0')
+                return False
+            else:
+                return True
 def read(File):
     with open(File, 'a+') as f:
         f.seek(0)
@@ -286,11 +295,22 @@ async def tz(ctx):
         f'看看你在哪裡 https://upload.wikimedia.org/wikipedia/commons/8/88/World_Time_Zones_Map.png'
     )
     def check(m):
-        response = m.content[0:3]
-        return response.upper() == 'UTC' and m.channel == user.dm_channel
+        if(m.channel == user.dm_channel):
+            if(m.content[0:3].upper() == 'UTC'):
+                response = m.content[0:3]
+                return True
+            elif(m.content.upper() == 'Y' or m.content.upper() == 'N'):
+                return True
+        return False
     msg = await bot.wait_for('message', check=check)
     set_UTC(user, msg)
-    await user.dm_channel.send(f'你輸入了UTC{msg.content[3:len(msg.content)]}，你已經加入變強的行列')
+    await user.dm_channel.send(f'你輸入了UTC{msg.content[3:len(msg.content)]}，你已經加入變強的行列\n')
+    run = True
+    while(run):
+        await user.dm_channel.send(f'開啟日光節約時間? (y/n)')
+        msg = await bot.wait_for('message', check=check)
+        run = set_DST(user, msg.content)
+    await user.dm_channel.send(f'你已設定日光節約時間 :)')
 @bot.command()
 async def info(ctx, *args):
     #await ctx.send('{} arguments: {}'.format(len(args), ', '.join(args)))
@@ -412,5 +432,3 @@ async def now(ctx, *args):
         await ctx.channel.send(msg)
 
 bot.run(TOKEN)
-
-#DST 日光節約時間
