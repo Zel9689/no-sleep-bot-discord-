@@ -1,6 +1,6 @@
 #修save_time -2會變負
 #日光節約時間選項
-#Uptime Lv 下次加多少經驗 距離下次刷新時間
+#Lv 下次加多少經驗 距離下次刷新時間
 #bug: 如果online且剛才offcount有值，要清空offcount(等於沒有做到連續兩小時)
 #ns now 使用者
 #ns rule
@@ -312,11 +312,15 @@ async def info(ctx, *args):
                     msg = f'{user.mention}還沒有成為變強的一員\n\
 輸入 ns timezone 設定你的時區 不睡覺才會變強'
                 else:
+                    if(L[6]=='1'):
+                        Dst = 'Yes'
+                    else:
+                        Dst = 'No'
                     msg = f'{user.mention}的資訊：\n\
-UTC: {L[1]}\n\
-EXP: {L[2]}\n\
-疊加狀態: {L[3]}\n\
-LV: {L[4]}'
+UTC: {L[1]} 日光節約時間: {Dst}\n\
+EXP: {L[2]} LV: {L[4]}\n\
+疊加狀態: {L[3]} 下次增加EXP：{} 下次升等所需EXP: {}\n\
+距離下次刷新時間: {}'
                     if(L[2] == '0'):
                         await ctx.channel.send(f'嫩 不睡覺才會變強')
             else:
@@ -385,11 +389,12 @@ async def now(ctx, *args):
                         break
             if(user != 0):
                 L = gettime(user)
+                L_str = L.strftime("%Y年%m月%d日 %H:%M:%S")
                 if(L == 'not_found'):
                     msg = f'{user.mention}還沒有成為變強的一員\n\
 輸入 ns timezone 設定你的時區 不睡覺才會變強'
                 else:
-                    msg = f'{user.mention}的在地時間：{L}'
+                    msg = f'{user.mention}的在地時間：{L_str}'
                     for i in range(24):
                         if(L.hour == i):
                             await ctx.channel.send(image[i])
