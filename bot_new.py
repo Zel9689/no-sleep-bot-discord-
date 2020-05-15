@@ -248,10 +248,11 @@ def gettime(user):
         if(str(user.id) in i):
             x = i.split('\t')
             Utc = x[1]
-            Dst = x[5]
+            Dst = x[6]
             flag = True
     if(flag):
         dt = datetime.utcnow()
+        dt = dt.replace(tzinfo=timezone.utc)
         DELTA = timezone(timedelta(hours=int(Utc)+int(Dst)))
         local_dt = dt.astimezone(DELTA)
     return local_dt
@@ -360,7 +361,7 @@ async def history(ctx, *args):
 @bot.command()
 async def rank(ctx):
     pass
-'''
+
 @bot.command()
 async def now(ctx, *args):
     try:
@@ -395,7 +396,7 @@ async def now(ctx, *args):
             else:
                 msg = '找不到該位使用者'
         await ctx.channel.send(msg)
-'''
+
 bot.run(TOKEN)
 
 #DST 日光節約時間
