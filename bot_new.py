@@ -1,5 +1,3 @@
-#Rank實作
-#最高疊加紀錄
 import os
 import time
 from operator import itemgetter
@@ -21,7 +19,7 @@ image = ['https://imgur.com/SOxeu7c','https://imgur.com/3AFdpJy','https://imgur.
             'https://imgur.com/BBnxfLf','https://imgur.com/lZXT4OC','https://imgur.com/azIji74','https://imgur.com/fQYJ2EF',\
                 'https://imgur.com/ZTOVvJR','https://imgur.com/MGxkUMa','https://imgur.com/rFoJGVt','https://imgur.com/6RjGgaU',\
                     'https://imgur.com/l2EIjLe','https://imgur.com/H7p7ycP','https://imgur.com/y5uaRDc','https://imgur.com/EWhgxvy']
-TEST = True
+TEST = False
 Time_to_start = 1800 #設定幾分觸發(e.g. 想要時間XX點12分觸發 Time_to_start = 720)
 Loop_time = 1800
 Time_range = 7
@@ -246,7 +244,6 @@ def next_lv_exp(LEVEL):
     if(LEVEL == 2):
         C = B
     return C
-
 def getdetail(user):
     File = './history/' + str(user.id) + '.txt'
     try:
@@ -254,10 +251,6 @@ def getdetail(user):
     except:
         content = -1
     return content
-async def send(channel, msg):
-    channel = bot.get_channel(channel)
-    await channel.send(msg)
-
 def gettime(user):
     flag = False
     local_dt = 'not_found'
@@ -301,6 +294,7 @@ def update_rank():
                 text = i
                 x = text.split('\t')
                 only_change(f_info, text, 5, str(L.index(j)+1))
+    return L
 @bot.event
 async def on_ready():
     print(bot.user.name, 'has connected to Discord!')
@@ -365,6 +359,9 @@ async def info(ctx, *args):
 輸入 **ns timezone** 設定你的時區 不睡覺才會變強'
                 else:
                     sec = sec_to_start()
+                    shit = '健康哦'
+                    if(int(L[7]) > 10):
+                        shit = '強哦'
                     if(L[6]=='1'):
                         Dst = 'Yes'
                     else:
@@ -374,6 +371,7 @@ async def info(ctx, *args):
 [UTC]: {L[1]} (日光節約時間: {Dst})\n\
 [LV]: {L[4]} ({L[2]} / {next_lv_exp(int(L[4]))})\n\
 [疊加狀態]: {L[3]} (+EXP: {stack_exp(L[3])})\n\
+[歷史最高疊加]: {L[7]}   <<{shit}\n\
 [距離下次刷新時間]: {sec//60}分{sec%60}秒\n\
 ```'
                     if(L[2] == '0'):
@@ -419,7 +417,13 @@ async def history(ctx, *args):
 
 @bot.command()
 async def rank(ctx):
-    pass
+    L = update_rank()
+    msg = f'no sleep 排名:\n[RANK] [LEVEL] [ID]\n'
+    for i in L:
+        x = i[0].split('\t')
+        user = bot.get_user(int(x[0]))
+        msg = msg + '{:<7}\t{:<8}\t{}\n'.format(L.index(i)+1, i[1], user.display_name)
+    await ctx.channel.send(msg)
 
 @bot.command()
 async def now(ctx, *args):
