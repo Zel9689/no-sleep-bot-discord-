@@ -1,6 +1,8 @@
-#修save_time -2會變負
+#Rank實作
+#最高疊加紀錄
 import os
 import time
+from operator import itemgetter
 import discord
 from threading import Timer
 from dotenv import load_dotenv
@@ -19,7 +21,7 @@ image = ['https://imgur.com/SOxeu7c','https://imgur.com/3AFdpJy','https://imgur.
             'https://imgur.com/BBnxfLf','https://imgur.com/lZXT4OC','https://imgur.com/azIji74','https://imgur.com/fQYJ2EF',\
                 'https://imgur.com/ZTOVvJR','https://imgur.com/MGxkUMa','https://imgur.com/rFoJGVt','https://imgur.com/6RjGgaU',\
                     'https://imgur.com/l2EIjLe','https://imgur.com/H7p7ycP','https://imgur.com/y5uaRDc','https://imgur.com/EWhgxvy']
-TEST = False
+TEST = True
 Time_to_start = 1800 #設定幾分觸發(e.g. 想要時間XX點12分觸發 Time_to_start = 720)
 Loop_time = 1800
 Time_range = 7
@@ -49,7 +51,8 @@ def set_UTC(user, msg):
     LV = '1'
     Rank = 'none'
     Dst = '0'
-    text = str(user.id) + '\t' + Utc + '\t' + Exp + '\t' + Stack + '\t' + LV + '\t' + Rank + '\t' + Dst + '\t' + '\n'
+    High = '0'
+    text = str(user.id) + '\t' + Utc + '\t' + Exp + '\t' + Stack + '\t' + LV + '\t' + Rank + '\t' + Dst + '\t' + High + '\t' + '\n'
     for i in content:
         if(str(user.id) in i):
             #進來代表已經有資料
@@ -98,6 +101,8 @@ def check_cd():#check cooldown
     stack_up(status_L)
     stack_clear(status_L)
     lv_up()
+    update_high()
+    update_rank()
 def check_online():
     status_L = []
     content = read(f_info)
@@ -122,14 +127,10 @@ def stack_up(status_L):
         if(status_L[i]=='on'):
             text = content[i]
             x = text.split('\t') #該行的List形式
-            Utc = x[1]
-            h = time.gmtime().tm_hour + eval(Utc)
-            if(h >= 24):
-                h = h - 24
-            elif(h < 0):
-                h = h + 24
+            user = bot.get_user(int(x[0]))
+            local_dt = gettime(user)
+            h = local_dt.hour
             if((h>=0 and h<Time_range) or x[3] != '0'): #哪個時間內可以增加stack&exp_add
-                user = bot.get_user(int(x[0]))
                 print(user.display_name,'stack增加') #wow
                 stack = str(int(x[3])+1)
                 #exp_add的部分
@@ -137,7 +138,6 @@ def stack_up(status_L):
                 expVal = stack_exp(stack)
                 text_new = only_change(f_info, text, 3, stack)
                 only_change(f_info, text_new, 2, str(round(exp + expVal, 1)))
-                user = bot.get_user(int(x[0]))
                 print(user.display_name, 'exp增加')
 def stack_exp(stack):
     content2 = read(f_rule)
@@ -280,7 +280,27 @@ def sec_to_start():
     if(sec < 0):
         sec = 3600 - UTC_time[1]*60 - UTC_time[2]
     return sec
-
+def update_high():
+    content = read(f_info)
+    for i in content:
+        text = i
+        x = text.split('\t')
+        if(int(x[3]) > int(x[7])):
+            only_change(f_info, text, 7, x[3])
+def update_rank():
+    level_L = []
+    content = read(f_info)
+    for i in content:
+        text = i
+        x = text.split('\t')
+        level_L.append([text, int(x[4]), float(x[2])])
+    L = sorted(level_L, key = itemgetter(1, 2), reverse = True)
+    for i in content:
+        for j in L:
+            if(j[0] in i):
+                text = i
+                x = text.split('\t')
+                only_change(f_info, text, 5, str(L.index(j)+1))
 @bot.event
 async def on_ready():
     print(bot.user.name, 'has connected to Discord!')
@@ -295,7 +315,7 @@ async def tz(ctx):
     await user.create_dm()
     await user.dm_channel.send(
         f'哈囉 {user.name}, 不睡覺才會變強！加入變強的行列請設定你的時區！\n'
-        f'設定你的時區, 輸入：UTC(+or-)數字; e.g. UTC+8\n'
+        f'設定你的時區, 輸入：UTC(+or-)數字; e.g. **UTC+8**\n'
         f'看看你在哪裡 https://upload.wikimedia.org/wikipedia/commons/8/88/World_Time_Zones_Map.png'
     )
     def check(m):
@@ -311,7 +331,7 @@ async def tz(ctx):
     await user.dm_channel.send(f'你輸入了UTC{msg.content[3:len(msg.content)]}，你已經加入變強的行列\n')
     run = True
     while(run):
-        await user.dm_channel.send(f'開啟日光節約時間? (y/n)')
+        await user.dm_channel.send(f'開啟日光節約時間? (**y**/**n**)')
         msg = await bot.wait_for('message', check=check)
         run = set_DST(user, msg.content)
     await user.dm_channel.send(f'你已設定日光節約時間 :)')
@@ -325,7 +345,7 @@ async def info(ctx, *args):
     else:
         #error
         if(len(args)>1):
-            msg = '你輸入了錯誤的格式, usage: ns info 使用者群暱稱(不輸入則查詢自己)'
+            msg = '你輸入了錯誤的格式, usage: **ns info** 使用者群暱稱(不輸入則查詢自己)'
         #ns info user.displayname
         else:
             L = [] #重置暫存器狀態
@@ -342,7 +362,7 @@ async def info(ctx, *args):
                 L = getinfo(user)
                 if(L == -1):
                     msg = f'{user.mention}還沒有成為變強的一員\n\
-輸入 ns timezone 設定你的時區 不睡覺才會變強'
+輸入 **ns timezone** 設定你的時區 不睡覺才會變強'
                 else:
                     sec = sec_to_start()
                     if(L[6]=='1'):
@@ -350,10 +370,12 @@ async def info(ctx, *args):
                     else:
                         Dst = 'No'
                     msg = f'{user.mention}的資訊：\n\
-UTC: {L[1]} (日光節約時間: {Dst})\n\
-LV: {L[4]} ({L[2]} / {next_lv_exp(int(L[4]))})\n\
-疊加狀態: {L[3]} (+EXP: {stack_exp(L[3])})\n\
-距離下次刷新時間: {sec//60}分{sec%60}秒'
+```ini\n\
+[UTC]: {L[1]} (日光節約時間: {Dst})\n\
+[LV]: {L[4]} ({L[2]} / {next_lv_exp(int(L[4]))})\n\
+[疊加狀態]: {L[3]} (+EXP: {stack_exp(L[3])})\n\
+[距離下次刷新時間]: {sec//60}分{sec%60}秒\n\
+```'
                     if(L[2] == '0'):
                         await ctx.channel.send(f'嫩 不睡覺才會變強')
             else:
@@ -368,7 +390,7 @@ async def history(ctx, *args):
     else:
         #error
         if(len(args)>1):
-            msg = '你輸入了錯誤的格式, usage: ns history 使用者群暱稱(不輸入則查詢自己)'
+            msg = '你輸入了錯誤的格式, usage: **ns history** 使用者群暱稱(不輸入則查詢自己)'
         #ns info user.displayname
         else:
             L = []
@@ -385,7 +407,7 @@ async def history(ctx, *args):
                 L = getdetail(user)
                 if(L == -1):
                     msg = f'{user.mention}還沒有成為變強的一員\n\
-輸入 ns timezone 設定你的時區 不睡覺才會變強'
+輸入 **ns timezone** 設定你的時區 不睡覺才會變強'
                 else:
                     data = ''
                     for i in L:
@@ -408,7 +430,7 @@ async def now(ctx, *args):
     else:
         #error
         if(len(args)>1):
-            msg = '你輸入了錯誤的格式, usage: ns info 使用者群暱稱(不輸入則查詢自己)'
+            msg = '你輸入了錯誤的格式, usage: **ns now** 使用者群暱稱(不輸入則查詢自己)'
         #ns now user.displayname
         else:
             user = 0
@@ -425,7 +447,7 @@ async def now(ctx, *args):
                 L_str = L.strftime("%Y年%m月%d日 %H:%M:%S")
                 if(L == 'not_found'):
                     msg = f'{user.mention}還沒有成為變強的一員\n\
-輸入 ns timezone 設定你的時區 不睡覺才會變強'
+輸入 **ns timezone** 設定你的時區 不睡覺才會變強'
                 else:
                     msg = f'{user.mention}的在地時間：{L_str}'
                     for i in range(24):
@@ -439,10 +461,12 @@ async def rule(ctx):
     user = ctx.author
     await user.create_dm()
     await user.dm_channel.send(
-        f'這是一個讓你熬夜時會升等的BOT，只要在晚上12點~早上7點之間在線上就會加經驗值\n'
-        f'如果你整夜都沒睡覺，即使超過早上7點還是會繼續加經驗值！\n'
-        f'除此之外每個人都會有一個「疊加狀態」，疊加狀態越高加的經驗就越多\n'
-        f'但中間只要連續離線2小時，疊加狀態就會被清除哦！\n'
-        f'輸入ns help可以有哪些可以用的指令'
+        f'```ini\n'
+        f'這是一個讓你熬夜時會升等的BOT，只要在[晚上12點~早上7點]之間在線上就會加經驗值\n'
+        f'如果你[整夜都沒睡覺]，即使超過早上7點還是會繼續加經驗值！\n'
+        f'除此之外每個人都會有一個[疊加狀態]，疊加狀態越高加的經驗就越多\n'
+        f'但中間只要[連續離線2小時]，疊加狀態就會被清除哦！\n'
+        f'輸入[ns help]可以看有哪些可以用的指令\n'
+        f'```'
     )
 bot.run(TOKEN)
