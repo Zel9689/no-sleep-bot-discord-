@@ -1,7 +1,6 @@
-#修save_time -2會變負
-#Rank實作
 import os
 import time
+from operator import itemgetter
 import discord
 from threading import Timer
 from dotenv import load_dotenv
@@ -50,7 +49,8 @@ def set_UTC(user, msg):
     LV = '1'
     Rank = 'none'
     Dst = '0'
-    text = str(user.id) + '\t' + Utc + '\t' + Exp + '\t' + Stack + '\t' + LV + '\t' + Rank + '\t' + Dst + '\t' + '\n'
+    High = '0'
+    text = str(user.id) + '\t' + Utc + '\t' + Exp + '\t' + Stack + '\t' + LV + '\t' + Rank + '\t' + Dst + '\t' + High + '\t' + '\n'
     for i in content:
         if(str(user.id) in i):
             #進來代表已經有資料
@@ -99,6 +99,8 @@ def check_cd():#check cooldown
     stack_up(status_L)
     stack_clear(status_L)
     lv_up()
+    update_high()
+    update_rank()
 def check_online():
     status_L = []
     content = read(f_info)
@@ -242,7 +244,6 @@ def next_lv_exp(LEVEL):
     if(LEVEL == 2):
         C = B
     return C
-
 def getdetail(user):
     File = './history/' + str(user.id) + '.txt'
     try:
@@ -250,10 +251,6 @@ def getdetail(user):
     except:
         content = -1
     return content
-async def send(channel, msg):
-    channel = bot.get_channel(channel)
-    await channel.send(msg)
-
 def gettime(user):
     flag = False
     local_dt = 'not_found'
@@ -276,7 +273,28 @@ def sec_to_start():
     if(sec < 0):
         sec = 3600 - UTC_time[1]*60 - UTC_time[2]
     return sec
-
+def update_high():
+    content = read(f_info)
+    for i in content:
+        text = i
+        x = text.split('\t')
+        if(int(x[3]) > int(x[7])):
+            only_change(f_info, text, 7, x[3])
+def update_rank():
+    level_L = []
+    content = read(f_info)
+    for i in content:
+        text = i
+        x = text.split('\t')
+        level_L.append([text, int(x[4]), float(x[2])])
+    L = sorted(level_L, key = itemgetter(1, 2), reverse = True)
+    for i in content:
+        for j in L:
+            if(j[0] in i):
+                text = i
+                x = text.split('\t')
+                only_change(f_info, text, 5, str(L.index(j)+1))
+    return L
 @bot.event
 async def on_ready():
     print(bot.user.name, 'has connected to Discord!')
@@ -341,6 +359,9 @@ async def info(ctx, *args):
 輸入 **ns timezone** 設定你的時區 不睡覺才會變強'
                 else:
                     sec = sec_to_start()
+                    shit = '健康哦'
+                    if(int(L[7]) > 10):
+                        shit = '強哦'
                     if(L[6]=='1'):
                         Dst = 'Yes'
                     else:
@@ -350,6 +371,10 @@ async def info(ctx, *args):
 [UTC]: {L[1]} (日光節約時間: {Dst})\n\
 [LV]: {L[4]} ({L[2]} / {next_lv_exp(int(L[4]))})\n\
 [疊加狀態]: {L[3]} (+EXP: {stack_exp(L[3])})\n\
+<<<<<<< HEAD
+=======
+[歷史最高疊加]: {L[7]}   <<{shit}\n\
+>>>>>>> dev2
 [距離下次刷新時間]: {sec//60}分{sec%60}秒\n\
 ```'
                     if(L[2] == '0'):
@@ -395,7 +420,13 @@ async def history(ctx, *args):
 
 @bot.command()
 async def rank(ctx):
-    pass
+    L = update_rank()
+    msg = f'no sleep 排名:\n[RANK] [LEVEL] [ID]\n'
+    for i in L:
+        x = i[0].split('\t')
+        user = bot.get_user(int(x[0]))
+        msg = msg + '{:<7}\t{:<8}\t{}\n'.format(L.index(i)+1, i[1], user.display_name)
+    await ctx.channel.send(msg)
 
 @bot.command()
 async def now(ctx, *args):
