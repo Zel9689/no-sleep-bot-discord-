@@ -371,10 +371,7 @@ async def info(ctx, *args):
 [UTC]: {L[1]} (日光節約時間: {Dst})\n\
 [LV]: {L[4]} ({L[2]} / {next_lv_exp(int(L[4]))})\n\
 [疊加狀態]: {L[3]} (+EXP: {stack_exp(L[3])})\n\
-<<<<<<< HEAD
-=======
 [歷史最高疊加]: {L[7]}   <<{shit}\n\
->>>>>>> dev2
 [距離下次刷新時間]: {sec//60}分{sec%60}秒\n\
 ```'
                     if(L[2] == '0'):
