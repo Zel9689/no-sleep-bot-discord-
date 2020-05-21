@@ -22,7 +22,7 @@ image = ['https://imgur.com/SOxeu7c','https://imgur.com/3AFdpJy','https://imgur.
 TEST = False
 Time_to_start = 1800 #設定幾分觸發(e.g. 想要時間XX點12分觸發 Time_to_start = 720)
 Loop_time = 1800
-Time_range = 7
+Time_range = 5
 
 #File:哪個檔 text:該行的str index:該行第幾個資料 value:改成啥
 def only_change(File, text, index, value): #File:str text:str index:int value:str
@@ -100,15 +100,14 @@ def check_cd():#check cooldown
     stack_clear(status_L)
     lv_up()
     update_high()
-    update_rank()
 def check_online():
     status_L = []
-    content = read(f_info)
+    content = read(f_info)   #y = f(x)
     for i in content:
         status = 'off' #假設使用者離線
-        text = i.split('\t')
+        x = i.split('\t')
         for j in bot.guilds:
-            user = discord.utils.find(lambda g: g.id==eval(text[0]), j.members)
+            user = discord.utils.find(lambda g: g.id==eval(x[0]), j.members)
             #進來代表至少找到一個他在線上的證據
             if(user != None and \
                 (user.status.value == 'online' or user.web_status.value == 'online' \
@@ -280,20 +279,16 @@ def update_high():
         x = text.split('\t')
         if(int(x[3]) > int(x[7])):
             only_change(f_info, text, 7, x[3])
-def update_rank():
+def update_rank(Guild):
     level_L = []
     content = read(f_info)
     for i in content:
         text = i
         x = text.split('\t')
-        level_L.append([text, int(x[4]), float(x[2])])
+        user = discord.utils.find(lambda g: g.id==eval(x[0]), Guild.members)
+        if(user != None): 
+            level_L.append([text, int(x[4]), float(x[2])])
     L = sorted(level_L, key = itemgetter(1, 2), reverse = True)
-    for i in content:
-        for j in L:
-            if(j[0] in i):
-                text = i
-                x = text.split('\t')
-                only_change(f_info, text, 5, str(L.index(j)+1))
     return L
 @bot.event
 async def on_ready():
@@ -360,8 +355,12 @@ async def info(ctx, *args):
                 else:
                     sec = sec_to_start()
                     shit = '健康哦'
-                    if(int(L[7]) > 10):
+                    if(int(L[7]) > 9):
                         shit = '強哦'
+                    if(int(L[7]) > 19):
+                        shit = '注意健康=='
+                    if(int(L[7]) > 29):
+                        shit = '不睡覺才能幹大事'
                     if(L[6]=='1'):
                         Dst = 'Yes'
                     else:
@@ -417,12 +416,15 @@ async def history(ctx, *args):
 
 @bot.command()
 async def rank(ctx):
-    L = update_rank()
-    msg = f'no sleep 排名:\n[RANK] [LEVEL] [ID]\n'
+    print(ctx.message.guild, '排名被查詢')
+    Guild = ctx.message.guild
+    L = update_rank(Guild)
+    msg = f'```ini\nno sleep 排名:\n[RANK] [LEVEL] [ID]\n'
     for i in L:
         x = i[0].split('\t')
         user = bot.get_user(int(x[0]))
-        msg = msg + '{:<7}\t{:<8}\t{}\n'.format(L.index(i)+1, i[1], user.display_name)
+        msg = msg + '{:<7}{:<8}{}\n'.format(L.index(i)+1, i[1], user.display_name)
+    msg = msg + '```'
     await ctx.channel.send(msg)
 
 @bot.command()
@@ -466,8 +468,8 @@ async def rule(ctx):
     await user.create_dm()
     await user.dm_channel.send(
         f'```ini\n'
-        f'這是一個讓你熬夜時會升等的BOT，只要在[晚上12點~早上7點]之間在線上就會加經驗值\n'
-        f'如果你[整夜都沒睡覺]，即使超過早上7點還是會繼續加經驗值！\n'
+        f'這是一個讓你熬夜時會升等的BOT，只要在[晚上12點~早上5點]之間在線上就會加經驗值\n'
+        f'如果你[整夜都沒睡覺]，即使超過早上5點還是會繼續加經驗值！\n'
         f'除此之外每個人都會有一個[疊加狀態]，疊加狀態越高加的經驗就越多\n'
         f'但中間只要[連續離線2小時]，疊加狀態就會被清除哦！\n'
         f'輸入[ns help]可以看有哪些可以用的指令\n'
