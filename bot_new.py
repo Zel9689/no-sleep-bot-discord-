@@ -1,3 +1,10 @@
+#改用@來查詢其他人
+#讓使用者總共被@的次數只有一次
+#ns now和info可以在私訊使用
+#讓BOT可以主動發話
+#14等可以二轉(加的經驗是原本的兩倍?)
+#ns rank 在私人訊息傳送的exception handle message
+#ns history 紀錄變化的那次(ex: online -> offline的時間) 用法 ns history 0529，可以做加密保證隱私
 import os
 import time
 from operator import itemgetter
@@ -9,9 +16,10 @@ from datetime import datetime,timezone,timedelta
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 bot = commands.Bot(command_prefix='ns ')
-f_info = 'info.txt'
-f_offcount = 'offcount.txt'
-f_rule = 'exp_rule.txt'
+Path = os.path.dirname(os.path.abspath(__file__))
+f_info = os.path.join(Path, 'info.txt')
+f_offcount = os.path.join(Path, 'offcount.txt')
+f_rule = os.path.join(Path,'exp_rule.txt')
 Lv_need = [38.5, 77] #Lv_need[0]升兩等所需經驗 Lv_need[1]升兩等所需經驗 升三等是前兩個相加
 image = ['https://imgur.com/SOxeu7c','https://imgur.com/3AFdpJy','https://imgur.com/4wQUnw2','https://imgur.com/MzxV0eU',\
     'https://imgur.com/pP9apDr','https://imgur.com/yhBzoJ3','https://imgur.com/jlahFPB','https://imgur.com/lZXT4OC',\
@@ -355,17 +363,23 @@ async def info(ctx, *args):
                 else:
                     sec = sec_to_start()
                     shit = '健康哦'
+                    shit2 = ''
                     if(int(L[7]) > 9):
                         shit = '強哦'
                     if(int(L[7]) > 19):
                         shit = '注意健康=='
                     if(int(L[7]) > 29):
                         shit = '不睡覺才能幹大事'
+                    if(int(L[7]) > 39):
+                        shit = 'noʎ ɥʇıʍ ƃuoɹʍ s,ʇɐɥʍ'
+                    if(int(L[7]) > 49):
+                        shit = 'gaygaygaygaygay'
+                        shit2 = 'https://youtu.be/X__e3fw9pYw'
                     if(L[6]=='1'):
                         Dst = 'Yes'
                     else:
                         Dst = 'No'
-                    msg = f'{user.mention}的資訊：\n\
+                    msg = f'{user.mention}的資訊：{shit2}\n\
 ```ini\n\
 [UTC]: {L[1]} (日光節約時間: {Dst})\n\
 [LV]: {L[4]} ({L[2]} / {next_lv_exp(int(L[4]))})\n\
@@ -450,11 +464,11 @@ async def now(ctx, *args):
                         break
             if(user != 0):
                 L = gettime(user)
-                L_str = L.strftime("%Y年%m月%d日 %H:%M:%S")
                 if(L == 'not_found'):
                     msg = f'{user.mention}還沒有成為變強的一員\n\
 輸入 **ns timezone** 設定你的時區 不睡覺才會變強'
                 else:
+                    L_str = L.strftime("%Y年%m月%d日 %H:%M:%S")
                     msg = f'{user.mention}的在地時間：{L_str}'
                     for i in range(24):
                         if(L.hour == i):
