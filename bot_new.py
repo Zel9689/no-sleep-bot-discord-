@@ -1,7 +1,8 @@
 #改用@來查詢其他人
 #讓使用者總共被@的次數只有一次
 #ns now和info可以在私訊使用
-#讓BOT可以主動發話
+#讓BOT可以主動發話 [OK]
+#升等會發訊息到伺服器指定的channel [OK]
 #14等可以二轉(加的經驗是原本的兩倍?)
 #ns rank 在私人訊息傳送的exception handle message
 #ns history 紀錄變化的那次(ex: online -> offline的時間) 用法 ns history 0529，可以做加密保證隱私
@@ -31,7 +32,7 @@ image = ['https://imgur.com/SOxeu7c','https://imgur.com/3AFdpJy','https://imgur.
 TEST = False
 Time_to_start = 1800 #設定幾分觸發(e.g. 想要時間XX點12分觸發 Time_to_start = 720)
 Loop_time = 1800
-Time_range = 5
+Time_range = 5 #從12點到[幾]點是online判定時間
 
 
 
@@ -103,7 +104,7 @@ def getinfo(user):
     print(user.display_name, '資料被查詢')
     return L
 async def check_cd():#check cooldown
-    sec = sec_to_start()
+    sec = Loop_time
     print('##檢查時間到了##')
     status_L = check_online()
     stack_up(status_L)
@@ -242,11 +243,14 @@ async def lv_up():
             print(user.display_name, '升等 ->',LEVEL)
             text_new = only_change(f_info, text, 2, str(round(exp, 1))) #把經驗值 -> 經驗值扣升等所需經驗
             only_change(f_info, text_new, 4, str(LEVEL))
-            msg = f'{user.mention}升等啦！ -> {LEVEL}'
+            msg = f'{user.mention}升等啦！ {LEVEL-1} -> {LEVEL}'
+            #User 去找 Server 再去找 Channel
             for i in bot.guilds:
                 user = discord.utils.find(lambda g: g.id==int(x[0]), i.members)
-                if(user != None):
-                    await message(str(i.id), msg)
+                if(user != None): #找到server了
+                    #去看設定要傳在哪個channel
+                    channel = getchannel(i)
+                await channel.send(msg)
 def next_lv_exp(LEVEL):
     A = Lv_need[0]
     B = Lv_need[1]
@@ -283,6 +287,13 @@ def gettime(user):
         DELTA = timezone(timedelta(hours=int(Utc)+int(Dst)))
         local_dt = dt.astimezone(DELTA)
     return local_dt
+def getchannel(server): #給server拿channel(都是物件)
+    content = read(f_ch)
+    for i in content:
+        if(str(server.id) in i):#找到檔案中對應的server了
+            x = i.split('\t')
+            channel_str = x[1]
+            return discord.utils.find(lambda g: g.id==int(channel_str), server.channels) #去找對應的channel
 def sec_to_start():
     UTC_time = [time.gmtime().tm_hour, time.gmtime().tm_min, time.gmtime().tm_sec]
     sec = Time_to_start - UTC_time[1]*60 - UTC_time[2]
@@ -307,13 +318,7 @@ def update_rank(Guild):
             level_L.append([text, int(x[4]), float(x[2])])
     L = sorted(level_L, key = itemgetter(1, 2), reverse = True)
     return L
-async def message(server, msg):
-    content = read(f_ch)
-    for i in content:
-        if(server in i):
-            x = i.split('\t')
-            channel = x[1]
-            await channel.send(msg)
+
 @bot.event
 async def on_ready():
     print(bot.user.name, 'has connected to Discord!')
@@ -335,7 +340,6 @@ async def tz(ctx):
     def check(m):
         if(m.channel == user.dm_channel):
             if(m.content[0:3].upper() == 'UTC'):
-                response = m.content[0:3]
                 return True
             elif(m.content.upper() == 'Y' or m.content.upper() == 'N'):
                 return True
@@ -519,7 +523,8 @@ async def msghere(ctx):
             only_change(f_ch, i, 1, str(channel))
             break
     if(flag == False):
-        text = f'{server}\t{channel}'
+        text = f'{server}\t{channel}\t\n'
         content.append(text)
         write(f_ch, content)
+    await ctx.channel.send(f'如果我突然想講話的話就在這裡講')
 bot.run(TOKEN)
