@@ -1,11 +1,12 @@
-#改用@來查詢其他人
-#讓使用者總共被@的次數只有一次
-#ns now和info可以在私訊使用
+#改用@來查詢其他人 [OK]
+#讓使用者總共被@的次數只有一次 [OK]
+#ns now和info可以在私訊使用 [OK]
 #讓BOT可以主動發話 [OK]
 #升等會發訊息到伺服器指定的channel [OK]
 #14等可以二轉(加的經驗是原本的兩倍?)
-#ns rank 在私人訊息傳送的exception handle message
+#ns rank 在私人訊息傳送的exception handle message [OK]
 #ns history 紀錄變化的那次(ex: online -> offline的時間) 用法 ns history 0529，可以做加密保證隱私
+#資訊要顯示頭貼
 import os
 import time
 from operator import itemgetter
@@ -31,7 +32,7 @@ image = ['https://imgur.com/SOxeu7c','https://imgur.com/3AFdpJy','https://imgur.
                     'https://imgur.com/l2EIjLe','https://imgur.com/H7p7ycP','https://imgur.com/y5uaRDc','https://imgur.com/EWhgxvy']
 TEST = False
 Time_to_start = 1800 #設定幾分觸發(e.g. 想要時間XX點12分觸發 Time_to_start = 720)
-Loop_time = 1800
+Loop_time = 1800 #第一次觸發後多久再觸發一次
 Time_range = 5 #從12點到[幾]點是online判定時間
 
 
@@ -94,15 +95,6 @@ def write(File, content):
     with open(File, 'w+') as f:
         f.seek(0,2)
         f.writelines(content)
-def getinfo(user):
-    content = read(f_info)
-    L = -1
-    for i in content:
-        if(str(user.id) in i):
-            L = i.split('\t')
-            break
-    print(user.display_name, '資料被查詢')
-    return L
 async def check_cd():#check cooldown
     sec = Loop_time
     print('##檢查時間到了##')
@@ -273,7 +265,7 @@ def getdetail(user):
     return content
 def gettime(user):
     flag = False
-    local_dt = 'not_found'
+    local_dt = -1
     content = read(f_info)
     for i in content:
         if(str(user.id) in i):
@@ -286,7 +278,17 @@ def gettime(user):
         dt = dt.replace(tzinfo=timezone.utc)
         DELTA = timezone(timedelta(hours=int(Utc)+int(Dst)))
         local_dt = dt.astimezone(DELTA)
+    print(user.display_name, '時間被查詢')
     return local_dt
+def getinfo(user):
+    content = read(f_info)
+    L = -1
+    for i in content:
+        if(str(user.id) in i):
+            L = i.split('\t')
+            break
+    print(user.display_name, '資料被查詢')
+    return L
 def getchannel(server): #給server拿channel(都是物件)
     content = read(f_ch)
     for i in content:
@@ -318,6 +320,40 @@ def update_rank(Guild):
             level_L.append([text, int(x[4]), float(x[2])])
     L = sorted(level_L, key = itemgetter(1, 2), reverse = True)
     return L
+async def command_handler(ctx, args, command):
+    content = read(f_info)
+    flag = False
+    user = 0
+    if(len(args)>1):
+        msg = f'你輸入了錯誤的格式, usage: **ns {command} @使用者**(不輸入則查詢自己)'
+    if(len(args)==0):
+        user = ctx.author
+        flag = True
+    if(len(args)==1):
+        length = len(args[0])
+        lamda = args[0][0:3] + args[0][length-1]
+        if(lamda!='<@!>'):
+            msg = '要用@的方式查別人哦'
+        else:
+            for i in content:
+                x = i.split('\t')
+                if(args[0] == f'<@!{x[0]}>'):
+                    user = bot.get_user(int(x[0]))
+                    flag = True #有找到這個使用者註冊
+                    break
+                user = bot.get_user(int(args[0][3:length-1]))
+                if(user != None):
+                    msg = f'{user.display_name}還沒有成為變強的一員\n輸入 **ns timezone** 設定你的時區 不睡覺才會變強'
+                else: #user搜尋結果為None，使用者可能亂輸入
+                    msg = f'你輸入了三小??'
+                    break
+    #有找到這個user在info裡
+    if(flag):
+        return user
+    else:
+        await ctx.send(msg)
+        user = 0
+        return user
 
 @bot.event
 async def on_ready():
@@ -326,7 +362,6 @@ async def on_ready():
     if(TEST):
         sec = 1
     await asyncio.sleep(sec)
-    print('test')
     await check_cd()
 @bot.command(name='timezone')
 async def tz(ctx):
@@ -355,52 +390,29 @@ async def tz(ctx):
     await user.dm_channel.send(f'你已設定日光節約時間 :)')
 @bot.command()
 async def info(ctx, *args):
-    #await ctx.send('{} arguments: {}'.format(len(args), ', '.join(args)))
-    try:
-        Users = ctx.message.guild.members
-    except:
-        await ctx.send('這個指令只能在頻道中使用')
-    else:
-        #error
-        if(len(args)>1):
-            msg = '你輸入了錯誤的格式, usage: **ns info** 使用者群暱稱(不輸入則查詢自己)'
-        #ns info user.displayname
+    user = await command_handler(ctx, args, 'info')
+    #有找到這個user在info裡
+    if(user != 0):
+        L = getinfo(user)
+        sec = sec_to_start()
+        shit = '健康哦'
+        shit2 = ''
+        if(int(L[7]) > 9):
+            shit = '強哦'
+        if(int(L[7]) > 19):
+            shit = '注意健康=='
+        if(int(L[7]) > 29):
+            shit = '不睡覺才能幹大事'
+        if(int(L[7]) > 39):
+            shit = 'noʎ ɥʇıʍ ƃuoɹʍ s,ʇɐɥʍ'
+        if(int(L[7]) > 49):
+            shit = 'gaygaygaygaygay'
+            shit2 = 'https://youtu.be/X__e3fw9pYw'
+        if(L[6]=='1'):
+            Dst = 'Yes'
         else:
-            L = [] #重置暫存器狀態
-            user = 0
-            #ns info
-            if(len(args)==0):
-                user = ctx.author
-            else:
-                for i in Users:
-                    if(args[0] == i.display_name):
-                        user = i
-                        break
-            if(user != 0):
-                L = getinfo(user)
-                if(L == -1):
-                    msg = f'{user.mention}還沒有成為變強的一員\n\
-輸入 **ns timezone** 設定你的時區 不睡覺才會變強'
-                else:
-                    sec = sec_to_start()
-                    shit = '健康哦'
-                    shit2 = ''
-                    if(int(L[7]) > 9):
-                        shit = '強哦'
-                    if(int(L[7]) > 19):
-                        shit = '注意健康=='
-                    if(int(L[7]) > 29):
-                        shit = '不睡覺才能幹大事'
-                    if(int(L[7]) > 39):
-                        shit = 'noʎ ɥʇıʍ ƃuoɹʍ s,ʇɐɥʍ'
-                    if(int(L[7]) > 49):
-                        shit = 'gaygaygaygaygay'
-                        shit2 = 'https://youtu.be/X__e3fw9pYw'
-                    if(L[6]=='1'):
-                        Dst = 'Yes'
-                    else:
-                        Dst = 'No'
-                    msg = f'{user.mention}的資訊：{shit2}\n\
+            Dst = 'No'
+        msg = f'{user.display_name}的資訊：{shit2}\n\
 ```ini\n\
 [UTC]: {L[1]} (日光節約時間: {Dst})\n\
 [LV]: {L[4]} ({L[2]} / {next_lv_exp(int(L[4]))})\n\
@@ -408,95 +420,38 @@ async def info(ctx, *args):
 [歷史最高疊加]: {L[7]}   <<{shit}\n\
 [距離下次刷新時間]: {sec//60}分{sec%60}秒\n\
 ```'
-                    if(L[2] == '0'):
-                        await ctx.channel.send(f'嫩 不睡覺才會變強')
-            else:
-                msg = '找不到該位使用者'
-        await ctx.channel.send(msg)
-@bot.command()
-async def history(ctx, *args):
-    try:
-        Users = ctx.message.guild.members
-    except:
-        await ctx.send('這個指令只能在頻道中使用')
-    else:
-        #error
-        if(len(args)>1):
-            msg = '你輸入了錯誤的格式, usage: **ns history** 使用者群暱稱(不輸入則查詢自己)'
-        #ns info user.displayname
-        else:
-            L = []
-            user = 0
-            #ns info
-            if(len(args)==0):
-                user = ctx.author
-            else:
-                for i in Users:
-                    if(args[0] == i.display_name):
-                        user = i
-                        break
-            if(user != 0):
-                L = getdetail(user)
-                if(L == -1):
-                    msg = f'{user.mention}還沒有成為變強的一員\n\
-輸入 **ns timezone** 設定你的時區 不睡覺才會變強'
-                else:
-                    data = ''
-                    for i in L:
-                        data = data + i.replace("\\","    ")
-                    msg = f'{user.mention}的上線歷史紀錄：\n{data}'
-            else:
-                msg = '找不到該位使用者'
-        await ctx.channel.send(msg)
+        if(L[2] == '0'):
+            await ctx.send(f'嫩 不睡覺才會變強')
+        await ctx.send(msg)
 
 @bot.command()
 async def rank(ctx):
-    print(ctx.message.guild, '排名被查詢')
-    Guild = ctx.message.guild
-    L = update_rank(Guild)
-    msg = f'```ini\nno sleep 排名:\n[RANK] [LEVEL] [ID]\n'
-    for i in L:
-        x = i[0].split('\t')
-        user = bot.get_user(int(x[0]))
-        msg = msg + '{:<7}{:<8}{}\n'.format(L.index(i)+1, i[1], user.display_name)
-    msg = msg + '```'
-    await ctx.channel.send(msg)
-
-@bot.command()
-async def now(ctx, *args):
     try:
         Users = ctx.message.guild.members
     except:
-        await ctx.send('這個指令只能在頻道中使用')
+        msg = '這個指令只能在頻道用欸'
     else:
-        #error
-        if(len(args)>1):
-            msg = '你輸入了錯誤的格式, usage: **ns now** 使用者群暱稱(不輸入則查詢自己)'
-        #ns now user.displayname
-        else:
-            user = 0
-            #ns now
-            if(len(args)==0):
-                user = ctx.author
-            else:
-                for i in Users:
-                    if(args[0] == i.display_name):
-                        user = i
-                        break
-            if(user != 0):
-                L = gettime(user)
-                if(L == 'not_found'):
-                    msg = f'{user.mention}還沒有成為變強的一員\n\
-輸入 **ns timezone** 設定你的時區 不睡覺才會變強'
-                else:
-                    L_str = L.strftime("%Y年%m月%d日 %H:%M:%S")
-                    msg = f'{user.mention}的在地時間：{L_str}'
-                    for i in range(24):
-                        if(L.hour == i):
-                            await ctx.channel.send(image[i])
-            else:
-                msg = '找不到該位使用者'
-        await ctx.channel.send(msg)
+        print(ctx.message.guild, '排名被查詢')
+        Guild = ctx.message.guild
+        L = update_rank(Guild)
+        msg = f'```ini\nno sleep 排名:\n[RANK] [LEVEL] [ID]\n'
+        for i in L:
+            x = i[0].split('\t')
+            user = bot.get_user(int(x[0]))
+            msg = msg + '{:<7}{:<8}{}\n'.format(L.index(i)+1, i[1], user.display_name)
+        msg = msg + '```'
+    await ctx.send(msg)
+@bot.command()
+async def now(ctx, *args):
+    user = await command_handler(ctx, args, 'now')
+    if(user != 0):
+        L = gettime(user)
+        L_str = L.strftime("%Y年%m月%d日 %H:%M:%S")
+        msg = f'{user.display_name}的在地時間：{L_str}'
+        for i in range(24):
+            if(L.hour == i):
+                await ctx.send(image[i])
+        await ctx.send(msg)
 @bot.command()
 async def rule(ctx):
     user = ctx.author
