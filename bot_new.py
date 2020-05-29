@@ -1,12 +1,6 @@
-#改用@來查詢其他人 [OK]
-#讓使用者總共被@的次數只有一次 [OK]
-#ns now和info可以在私訊使用 [OK]
-#讓BOT可以主動發話 [OK]
-#升等會發訊息到伺服器指定的channel [OK]
 #14等可以二轉(加的經驗是原本的兩倍?)
-#ns rank 在私人訊息傳送的exception handle message [OK]
 #ns history 紀錄變化的那次(ex: online -> offline的時間) 用法 ns history 0529，可以做加密保證隱私
-#資訊要顯示頭貼
+#資訊要顯示頭貼 [OK]
 import os
 import time
 from operator import itemgetter
@@ -278,7 +272,6 @@ def gettime(user):
         dt = dt.replace(tzinfo=timezone.utc)
         DELTA = timezone(timedelta(hours=int(Utc)+int(Dst)))
         local_dt = dt.astimezone(DELTA)
-    print(user.display_name, '時間被查詢')
     return local_dt
 def getinfo(user):
     content = read(f_info)
@@ -287,7 +280,6 @@ def getinfo(user):
         if(str(user.id) in i):
             L = i.split('\t')
             break
-    print(user.display_name, '資料被查詢')
     return L
 def getchannel(server): #給server拿channel(都是物件)
     content = read(f_ch)
@@ -393,6 +385,7 @@ async def info(ctx, *args):
     user = await command_handler(ctx, args, 'info')
     #有找到這個user在info裡
     if(user != 0):
+        print(user.display_name, '資料被查詢')
         L = getinfo(user)
         sec = sec_to_start()
         shit = '健康哦'
@@ -412,18 +405,18 @@ async def info(ctx, *args):
             Dst = 'Yes'
         else:
             Dst = 'No'
-        msg = f'{user.display_name}的資訊：{shit2}\n\
-```ini\n\
-[UTC]: {L[1]} (日光節約時間: {Dst})\n\
-[LV]: {L[4]} ({L[2]} / {next_lv_exp(int(L[4]))})\n\
-[疊加狀態]: {L[3]} (+EXP: {stack_exp(L[3])})\n\
-[歷史最高疊加]: {L[7]}   <<{shit}\n\
-[距離下次刷新時間]: {sec//60}分{sec%60}秒\n\
-```'
-        if(L[2] == '0'):
-            await ctx.send(f'嫩 不睡覺才會變強')
-        await ctx.send(msg)
+        embed = discord.Embed(title="標題標題標題標題", colour=discord.Colour(0xa9d87a), url="https://youtu.be/dQw4w9WgXcQ")
 
+        embed.set_thumbnail(url=user.avatar_url)
+        embed.set_author(name=user.name, url="https://youtu.be/8DPoX3TLRdQ", icon_url=user.avatar_url)
+
+        embed.add_field(name=":no_bicycles: LEVEL", value=f'{L[4]}')
+        embed.add_field(name=":exploding_head: 疊加狀態", value=f'{L[3]}')
+        embed.add_field(name=":map: UTC", value=f'{L[1]}(日光節約時間: {Dst})')
+        embed.add_field(name=":flushed: EXP", value=f'{L[2]}/{next_lv_exp(int(L[4]))}')
+        embed.add_field(name=":man_gesturing_no: 歷史最高疊加", value=f'{L[7]}')
+        embed.add_field(name=":woman_mage: 距離下次刷新時間", value=f'{sec//60}分{sec%60}秒')
+        await ctx.send(embed=embed)
 @bot.command()
 async def rank(ctx):
     try:
@@ -445,6 +438,7 @@ async def rank(ctx):
 async def now(ctx, *args):
     user = await command_handler(ctx, args, 'now')
     if(user != 0):
+        print(user.display_name, '時間被查詢')
         L = gettime(user)
         L_str = L.strftime("%Y年%m月%d日 %H:%M:%S")
         msg = f'{user.display_name}的在地時間：{L_str}'
@@ -481,5 +475,5 @@ async def msghere(ctx):
         text = f'{server}\t{channel}\t\n'
         content.append(text)
         write(f_ch, content)
-    await ctx.channel.send(f'如果我突然想講話的話就在這裡講')
+    await ctx.send(f'如果我突然想講話的話就在這裡講')
 bot.run(TOKEN)
