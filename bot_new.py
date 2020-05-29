@@ -9,7 +9,7 @@ import os
 import time
 from operator import itemgetter
 import discord
-from threading import Timer
+import asyncio
 from dotenv import load_dotenv
 from discord.ext import commands
 from datetime import datetime,timezone,timedelta
@@ -19,7 +19,8 @@ bot = commands.Bot(command_prefix='ns ')
 Path = os.path.dirname(os.path.abspath(__file__))
 f_info = os.path.join(Path, 'info.txt')
 f_offcount = os.path.join(Path, 'offcount.txt')
-f_rule = os.path.join(Path,'exp_rule.txt')
+f_rule = os.path.join(Path, 'exp_rule.txt')
+f_ch = os.path.join(Path, 'whichChannel.txt')
 Lv_need = [38.5, 77] #Lv_need[0]升兩等所需經驗 Lv_need[1]升兩等所需經驗 升三等是前兩個相加
 image = ['https://imgur.com/SOxeu7c','https://imgur.com/3AFdpJy','https://imgur.com/4wQUnw2','https://imgur.com/MzxV0eU',\
     'https://imgur.com/pP9apDr','https://imgur.com/yhBzoJ3','https://imgur.com/jlahFPB','https://imgur.com/lZXT4OC',\
@@ -31,6 +32,8 @@ TEST = False
 Time_to_start = 1800 #設定幾分觸發(e.g. 想要時間XX點12分觸發 Time_to_start = 720)
 Loop_time = 1800
 Time_range = 5
+
+
 
 #File:哪個檔 text:該行的str index:該行第幾個資料 value:改成啥
 def only_change(File, text, index, value): #File:str text:str index:int value:str
@@ -99,15 +102,16 @@ def getinfo(user):
             break
     print(user.display_name, '資料被查詢')
     return L
-def check_cd():#check cooldown
-    t = Timer(Loop_time, check_cd)
-    t.start()
+async def check_cd():#check cooldown
+    sec = sec_to_start()
     print('##檢查時間到了##')
     status_L = check_online()
     stack_up(status_L)
     stack_clear(status_L)
-    lv_up()
     update_high()
+    await lv_up()
+    await asyncio.sleep(sec)
+    await check_cd()
 def check_online():
     status_L = []
     content = read(f_info)   #y = f(x)
@@ -216,7 +220,7 @@ def save_time(id, mode):#'on' > 存上線 ; 'off' > 存下線
         f.seek(0,2)
         f.writelines(text)
     print('寫入檔案...')
-def lv_up():
+async def lv_up():
     content = read(f_info)
     for i in content:
         text = i
@@ -238,6 +242,11 @@ def lv_up():
             print(user.display_name, '升等 ->',LEVEL)
             text_new = only_change(f_info, text, 2, str(round(exp, 1))) #把經驗值 -> 經驗值扣升等所需經驗
             only_change(f_info, text_new, 4, str(LEVEL))
+            msg = f'{user.mention}升等啦！ -> {LEVEL}'
+            for i in bot.guilds:
+                user = discord.utils.find(lambda g: g.id==int(x[0]), i.members)
+                if(user != None):
+                    await message(str(i.id), msg)
 def next_lv_exp(LEVEL):
     A = Lv_need[0]
     B = Lv_need[1]
@@ -298,14 +307,22 @@ def update_rank(Guild):
             level_L.append([text, int(x[4]), float(x[2])])
     L = sorted(level_L, key = itemgetter(1, 2), reverse = True)
     return L
+async def message(server, msg):
+    content = read(f_ch)
+    for i in content:
+        if(server in i):
+            x = i.split('\t')
+            channel = x[1]
+            await channel.send(msg)
 @bot.event
 async def on_ready():
     print(bot.user.name, 'has connected to Discord!')
     sec = sec_to_start()
     if(TEST):
         sec = 1
-    t = Timer(sec, check_cd)
-    t.start()
+    await asyncio.sleep(sec)
+    print('test')
+    await check_cd()
 @bot.command(name='timezone')
 async def tz(ctx):
     user = ctx.author
@@ -489,4 +506,20 @@ async def rule(ctx):
         f'輸入[ns help]可以看有哪些可以用的指令\n'
         f'```'
     )
+@bot.command()
+async def msghere(ctx):
+    #設定BOT會傳通知在這裡
+    content = read(f_ch)
+    channel = ctx.channel.id
+    server = ctx.message.guild.id
+    flag = False
+    for i in content:
+        if(str(channel) in i):
+            flag = True
+            only_change(f_ch, i, 1, str(channel))
+            break
+    if(flag == False):
+        text = f'{server}\t{channel}'
+        content.append(text)
+        write(f_ch, content)
 bot.run(TOKEN)
