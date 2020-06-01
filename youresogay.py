@@ -1,2 +1,2 @@
 # you're so gay.py
-sad af
+notzerp <<gay name
