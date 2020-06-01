@@ -1,6 +1,9 @@
 #14等可以二轉(加的經驗是原本的兩倍?)
 #ns history 紀錄變化的那次(ex: online -> offline的時間) 用法 ns history 0529，可以做加密保證隱私
 #資訊要顯示頭貼 [OK]
+#ns now rank 也要顯示
+#做類似控制台 只有被指定的管理員可以控制
+#每次檢查都自動備份
 import os
 import time
 from operator import itemgetter
@@ -233,10 +236,10 @@ async def lv_up():
             #User 去找 Server 再去找 Channel
             for i in bot.guilds:
                 user = discord.utils.find(lambda g: g.id==int(x[0]), i.members)
-                if(user != None): #找到server了
+                if(user != None and user.id != 709480752206708809): #找到server了
                     #去看設定要傳在哪個channel
                     channel = getchannel(i)
-                await channel.send(msg)
+                    await channel.send(msg)
 def next_lv_exp(LEVEL):
     A = Lv_need[0]
     B = Lv_need[1]
@@ -389,7 +392,6 @@ async def info(ctx, *args):
         L = getinfo(user)
         sec = sec_to_start()
         shit = '健康哦'
-        shit2 = ''
         if(int(L[7]) > 9):
             shit = '強哦'
         if(int(L[7]) > 19):
@@ -400,16 +402,13 @@ async def info(ctx, *args):
             shit = 'noʎ ɥʇıʍ ƃuoɹʍ s,ʇɐɥʍ'
         if(int(L[7]) > 49):
             shit = 'gaygaygaygaygay'
-            shit2 = 'https://youtu.be/X__e3fw9pYw'
         if(L[6]=='1'):
             Dst = 'Yes'
         else:
             Dst = 'No'
-        embed = discord.Embed(title="標題標題標題標題", colour=discord.Colour(0xa9d87a), url="https://youtu.be/dQw4w9WgXcQ")
-
+        embed = discord.Embed(title=shit, colour=discord.Colour(0xa9d87a), url="https://youtu.be/dQw4w9WgXcQ")
         embed.set_thumbnail(url=user.avatar_url)
         embed.set_author(name=user.name, url="https://youtu.be/8DPoX3TLRdQ", icon_url=user.avatar_url)
-
         embed.add_field(name=":no_bicycles: LEVEL", value=f'{L[4]}')
         embed.add_field(name=":exploding_head: 疊加狀態", value=f'{L[3]}')
         embed.add_field(name=":map: UTC", value=f'{L[1]}(日光節約時間: {Dst})')
