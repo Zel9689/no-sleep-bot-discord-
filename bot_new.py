@@ -4,6 +4,7 @@
 # ns now rank 也要顯示
 # 做類似控制台 只有被指定的管理員可以控制
 # 每次檢查都自動備份
+# 要git一個.env樣板上去
 import os
 import time
 from operator import itemgetter
@@ -21,13 +22,13 @@ f_offcount = os.path.join(Path, 'offcount.txt')
 f_rule = os.path.join(Path, 'exp_rule.txt')
 f_ch = os.path.join(Path, 'whichChannel.txt')
 Lv_need = [38.5, 77]  # Lv_need[0]升兩等所需經驗 Lv_need[1]升兩等所需經驗 升三等是前兩個相加
-image = ['https://imgur.com/SOxeu7c','https://imgur.com/3AFdpJy','https://imgur.com/4wQUnw2','https://imgur.com/MzxV0eU',\
-        'https://imgur.com/pP9apDr','https://imgur.com/yhBzoJ3','https://imgur.com/jlahFPB','https://imgur.com/lZXT4OC',\
-        'https://imgur.com/cggySDj','https://imgur.com/nbsxbkz','https://imgur.com/SvvwaP3','https://imgur.com/ejFydUg',\
-        'https://imgur.com/BBnxfLf','https://imgur.com/lZXT4OC','https://imgur.com/azIji74','https://imgur.com/fQYJ2EF',\
-        'https://imgur.com/ZTOVvJR','https://imgur.com/MGxkUMa','https://imgur.com/rFoJGVt','https://imgur.com/6RjGgaU',\
-        'https://imgur.com/l2EIjLe','https://imgur.com/H7p7ycP','https://imgur.com/y5uaRDc','https://imgur.com/EWhgxvy']
-TEST = True
+image = ['https://imgur.com/SOxeu7c', 'https://imgur.com/3AFdpJy', 'https://imgur.com/4wQUnw2', 'https://imgur.com/MzxV0eU',
+            'https://imgur.com/pP9apDr', 'https://imgur.com/yhBzoJ3', 'https://imgur.com/jlahFPB', 'https://imgur.com/lZXT4OC',
+            'https://imgur.com/cggySDj', 'https://imgur.com/nbsxbkz', 'https://imgur.com/SvvwaP3', 'https://imgur.com/ejFydUg',
+            'https://imgur.com/BBnxfLf', 'https://imgur.com/lZXT4OC', 'https://imgur.com/azIji74', 'https://imgur.com/fQYJ2EF',
+            'https://imgur.com/ZTOVvJR', 'https://imgur.com/MGxkUMa', 'https://imgur.com/rFoJGVt', 'https://imgur.com/6RjGgaU',
+            'https://imgur.com/l2EIjLe', 'https://imgur.com/H7p7ycP', 'https://imgur.com/y5uaRDc', 'https://imgur.com/EWhgxvy']
+TEST = False
 Time_to_start = 1800  # 設定幾分觸發(e.g. 想要時間XX點12分觸發 Time_to_start = 720)
 Loop_time = 1800  # 第一次觸發後多久再觸發一次
 Time_range = 5  # 從12點到[幾]點是online判定時間
@@ -97,7 +98,7 @@ def read(File):
 
 def write(File, content):
     with open(File, 'w+') as f:
-        f.seek(0,2)
+        f.seek(0, 2)
         f.writelines(content)
 
 
@@ -122,9 +123,10 @@ def check_online():
         for j in bot.guilds:
             user = discord.utils.find(lambda g: g.id == eval(x[0]), j.members)
             # 進來代表至少找到一個他在線上的證據
-            if(user is not None and \
-                (user.status.value == 'online' or user.web_status.value == 'online' \
-                    or user.mobile_status.value == 'online' \
+            if(user is not None and
+                (user.status.value == 'online'
+                    or user.web_status.value == 'online'
+                    or user.mobile_status.value == 'online'
                     or (user.voice is not None and user.voice.afk is False))):
                 status = 'on'  # 刷新成上線
                 print(user.display_name, '在線上')  # wow
@@ -276,15 +278,6 @@ def next_lv_exp(LEVEL):
     if(LEVEL == 2):
         C = B
     return C
-
-
-def getdetail(user):
-    File = './history/' + str(user.id) + '.txt'
-    try:
-        content = read(File)
-    except:
-        content = -1
-    return content
 
 
 def gettime(user):
@@ -476,8 +469,8 @@ async def rank(ctx):
         msg = '```ini\nno sleep 排名:\n[RANK] [LEVEL] [ID]\n'
         for i in L:
             x = i[0].split('\t')
-            user = bot.get_user(int(x[0]))
-            msg = msg + '{:<7}{:<8}{}\n'.format(L.index(i)+1, i[1], user.display_name)
+            user = discord.utils.find(lambda u: u.id == int(x[0]), Guild.members)
+            msg = msg + f'{L.index(i)+1:<7}{i[1]:<8}{user.display_name}\n'
         msg = msg + '```'
     await ctx.send(msg)
 
@@ -501,13 +494,13 @@ async def rule(ctx):
     user = ctx.author
     await user.create_dm()
     await user.dm_channel.send(
-        f'```ini\n'
-        f'這是一個讓你熬夜時會升等的BOT，只要在[晚上12點~早上5點]之間在線上就會加經驗值\n'
-        f'如果你[整夜都沒睡覺]，即使超過早上5點還是會繼續加經驗值！\n'
-        f'除此之外每個人都會有一個[疊加狀態]，疊加狀態越高加的經驗就越多\n'
-        f'但中間只要[連續離線2小時]，疊加狀態就會被清除哦！\n'
-        f'輸入[ns help]可以看有哪些可以用的指令\n'
-        f'```'
+        '```ini\n'
+        '這是一個讓你熬夜時會升等的BOT，只要在[晚上12點~早上5點]之間在線上就會加經驗值\n'
+        '如果你[整夜都沒睡覺]，即使超過早上5點還是會繼續加經驗值！\n'
+        '除此之外每個人都會有一個[疊加狀態]，疊加狀態越高加的經驗就越多\n'
+        '但中間只要[連續離線2小時]，疊加狀態就會被清除哦！\n'
+        '輸入[ns help]可以看有哪些可以用的指令\n'
+        '```'
     )
 
 
