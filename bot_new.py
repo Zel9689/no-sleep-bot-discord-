@@ -27,7 +27,7 @@ image = ['https://imgur.com/SOxeu7c','https://imgur.com/3AFdpJy','https://imgur.
         'https://imgur.com/BBnxfLf','https://imgur.com/lZXT4OC','https://imgur.com/azIji74','https://imgur.com/fQYJ2EF',\
         'https://imgur.com/ZTOVvJR','https://imgur.com/MGxkUMa','https://imgur.com/rFoJGVt','https://imgur.com/6RjGgaU',\
         'https://imgur.com/l2EIjLe','https://imgur.com/H7p7ycP','https://imgur.com/y5uaRDc','https://imgur.com/EWhgxvy']
-TEST = False
+TEST = True
 Time_to_start = 1800  # 設定幾分觸發(e.g. 想要時間XX點12分觸發 Time_to_start = 720)
 Loop_time = 1800  # 第一次觸發後多久再觸發一次
 Time_range = 5  # 從12點到[幾]點是online判定時間
@@ -122,10 +122,10 @@ def check_online():
         for j in bot.guilds:
             user = discord.utils.find(lambda g: g.id == eval(x[0]), j.members)
             # 進來代表至少找到一個他在線上的證據
-            if(user is None and \
+            if(user is not None and \
                 (user.status.value == 'online' or user.web_status.value == 'online' \
                     or user.mobile_status.value == 'online' \
-                    or (user.voice is None and user.voice.afk is False))):
+                    or (user.voice is not None and user.voice.afk is False))):
                 status = 'on'  # 刷新成上線
                 print(user.display_name, '在線上')  # wow
                 break
@@ -257,7 +257,7 @@ async def lv_up():
             # User 去找 Server 再去找 Channel
             for i in bot.guilds:
                 user = discord.utils.find(lambda g: g.id == int(x[0]), i.members)
-                if(user is None and user.id != 709480752206708809):  # 找到server了
+                if(user is not None and user.id != 709480752206708809):  # 找到server了
                     # 去看設定要傳在哪個channel
                     channel = getchannel(i)
                     await channel.send(msg)
@@ -348,7 +348,7 @@ def update_rank(Guild):
         text = i
         x = text.split('\t')
         user = discord.utils.find(lambda g: g.id == eval(x[0]), Guild.members)
-        if(user is None):
+        if(user is not None):
             level_L.append([text, int(x[4]), float(x[2])])
     L = sorted(level_L, key=itemgetter(1, 2), reverse=True)
     return L
@@ -376,7 +376,7 @@ async def command_handler(ctx, args, command):
                     flag = True  # 有找到這個使用者註冊
                     break
                 user = bot.get_user(int(args[0][3:length-1]))
-                if(user is None):
+                if(user is not None):
                     msg = f'{user.display_name}還沒有成為變強的一員\n輸入 **ns timezone** 設定你的時區 不睡覺才會變強'
                 else:  # user搜尋結果為None，使用者可能亂輸入
                     msg = '你輸入了三小??'
