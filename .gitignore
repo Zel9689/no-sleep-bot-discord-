@@ -8,3 +8,4 @@ history/
 .env
 image/
 offcount.txt
+.vscode/
