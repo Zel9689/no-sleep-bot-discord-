@@ -360,7 +360,7 @@ async def command_handler(ctx, args, command):
         length = len(args[0])
         lamda = args[0][0:3] + args[0][length-1]
         if(lamda != '<@!>'):
-            msg = '要用@的方式查別人哦'
+            msg = '用@的方式查別人喇'
         else:
             for i in content:
                 x = i.split('\t')
