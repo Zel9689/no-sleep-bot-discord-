@@ -13,10 +13,12 @@ import asyncio
 from dotenv import load_dotenv
 from discord.ext import commands
 from datetime import datetime, timezone, timedelta
-load_dotenv()
+Path = os.path.dirname(os.path.abspath(__file__))
+env_path = os.path.join(Path, '.env')
+load_dotenv(dotenv_path=env_path, override=True)
 TOKEN = os.getenv('DISCORD_TOKEN')
 bot = commands.Bot(command_prefix='ns ')
-Path = os.path.dirname(os.path.abspath(__file__))
+
 f_info = os.path.join(Path, 'info.txt')
 f_offcount = os.path.join(Path, 'offcount.txt')
 f_rule = os.path.join(Path, 'exp_rule.txt')
