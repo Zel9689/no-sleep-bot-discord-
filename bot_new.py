@@ -8,6 +8,7 @@
 import os
 import time
 from operator import itemgetter
+import random
 import discord
 import asyncio
 from dotenv import load_dotenv
@@ -523,4 +524,12 @@ async def msghere(ctx):
         content.append(text)
         write(f_ch, content)
     await ctx.send('如果我突然想講話的話就在這裡講')
+
+
+@bot.event
+async def on_message(ctx):
+    user = ctx.author
+    L = ['你閉嘴', '你別吵', '安靜', 'B嘴', '==', '購ㄌ喔', '要睡覺嗎?', '恩恩', '好', '行', '善哉，感恩。']
+    if(user.id == 716982924427264070):
+        await ctx.channel.send(f'{user.mention}{random.choice(L)}')
 bot.run(TOKEN)
