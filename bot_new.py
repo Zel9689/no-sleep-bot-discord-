@@ -529,7 +529,10 @@ async def msghere(ctx):
 @bot.event
 async def on_message(ctx):
     user = ctx.author
-    L = ['你閉嘴', '你別吵', '安靜', 'B嘴', '==', '購ㄌ喔', '要睡覺嗎?', '恩恩', '好', '行', '善哉，感恩。']
-    if(user.id == 716982924427264070):
+    num = random.random()
+    if(num > 0.8 and user.id == 716982924427264070):
+        L = ['你閉嘴', '你別吵', '安靜', 'B嘴', '==', '購ㄌ喔', '要睡覺嗎?', '恩恩', '好', '行', '善哉，感恩。']
         await ctx.channel.send(f'{user.mention}{random.choice(L)}')
+    if (ctx.content.startswith('ns ')):
+        await bot.process_commands(ctx)
 bot.run(TOKEN)
