@@ -5,6 +5,8 @@
 # 做類似控制台 只有被指定的管理員可以控制
 # 每次檢查都自動備份
 # 要git一個.env樣板上去
+# 自動備份檔案
+# 近七天平均疊加
 import os
 import time
 from operator import itemgetter
@@ -451,7 +453,7 @@ async def info(ctx, *args):
         embed.set_thumbnail(url=user.avatar_url)
         embed.set_author(name=user.name, url="https://youtu.be/8DPoX3TLRdQ", icon_url=user.avatar_url)
         embed.add_field(name=":no_bicycles: LEVEL", value=f'{L[4]}')
-        embed.add_field(name=":exploding_head: 疊加狀態", value=f'{L[3]}')
+        embed.add_field(name=":exploding_head: 疊加狀態", value=f'{L[3]}(+{stack_exp(L[3])})')
         embed.add_field(name=":map: UTC", value=f'{L[1]}(日光節約時間: {Dst})')
         embed.add_field(name=":flushed: EXP", value=f'{L[2]}/{next_lv_exp(int(L[4]))}')
         embed.add_field(name=":man_gesturing_no: 歷史最高疊加", value=f'{L[7]}')
