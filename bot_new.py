@@ -355,37 +355,33 @@ def update_rank(Guild):
 async def command_handler(ctx, args, command):
     content = read(f_info)
     flag = False
-    user = 0
+    user_chose = 0
     if(len(args) > 1):
         msg = f'你輸入了錯誤的格式, usage: **ns {command} @使用者**(不輸入則查詢自己)'
     if(len(args) == 0):
-        user = ctx.author
+        user_chose = ctx.author
         flag = True
     if(len(args) == 1):
-        length = len(args[0])
-        lamda = args[0][0:3] + args[0][length-1]
-        if(lamda != '<@!>'):
-            msg = '用@的方式查別人喇'
+        try:
+            user_chose = ctx.message.mentions[0]
+        except IndexError:  # user搜尋結果為None，使用者可能亂輸入
+            msg = f'你輸入了錯誤的格式, usage: **ns {command} @使用者**(不輸入則查詢自己)'
         else:
             for i in content:
                 x = i.split('\t')
-                if(args[0] == f'<@!{x[0]}>'):
-                    user = bot.get_user(int(x[0]))
+                user = bot.get_user(int(x[0]))
+                if(user.id == user_chose.id):
                     flag = True  # 有找到這個使用者註冊
                     break
-                user = bot.get_user(int(args[0][3:length-1]))
-                if(user is not None):
-                    msg = f'{user.display_name}還沒有成為變強的一員\n輸入 **ns timezone** 設定你的時區 不睡覺才會變強'
-                else:  # user搜尋結果為None，使用者可能亂輸入
-                    msg = '你輸入了三小??'
-                    break
+                if(user_chose is not None):
+                    msg = f'{user_chose.display_name}還沒有成為變強的一員\n輸入 **ns timezone** 設定你的時區 不睡覺才會變強'
     # 有找到這個user在info裡
     if(flag):
-        return user
+        return user_chose
     else:
         await ctx.send(msg)
-        user = 0
-        return user
+        user_chose = 0
+        return user_chose
 
 
 @bot.event
